@@ -1,0 +1,53 @@
+.settings-page {
+  display: flex;
+  max-width: 1080px;
+  flex-direction: column;
+  gap: var(--aw-spacing-4);
+}
+
+.settings-page-title {
+  margin: 0;
+  color: var(--aw-text-primary);
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.settings-card {
+  border: 1px solid var(--aw-border);
+  border-radius: var(--aw-radius);
+  background: var(--aw-bg-shell);
+  box-shadow: var(--aw-shadow);
+}
+
+.settings-select-compact,
+.settings-input-compact {
+  width: 200px;
+}
+
+.settings-input-wide {
+  width: 400px;
+}
+
+.settings-credential-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-helper-text {
+  color: var(--aw-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .settings-form .n-form-item--left-labelled {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .settings-form .n-input,
+  .settings-form .n-input-number,
+  .settings-form .n-base-selection {
+    width: 100% !important;
+  }
+}

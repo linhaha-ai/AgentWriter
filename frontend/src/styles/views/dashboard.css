@@ -1,0 +1,131 @@
+.dashboard-page {
+  gap: var(--aw-spacing-5);
+}
+
+.dashboard-card {
+  min-width: 0;
+  border: 1px solid var(--aw-border);
+  border-radius: var(--aw-radius);
+  background: var(--aw-bg-shell);
+  box-shadow: var(--aw-shadow);
+}
+
+.dashboard-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--aw-spacing-4);
+  padding: 16px 18px;
+}
+
+.dashboard-pipeline strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+}
+
+.dashboard-pipeline__steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.dashboard-pipeline__steps span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--aw-text-secondary);
+  font-size: 12px;
+}
+
+.dashboard-pipeline__dot--info { color: var(--aw-info); }
+.dashboard-pipeline__dot--accent { color: var(--aw-accent); }
+
+.dashboard-agent-item {
+  padding: 6px 0;
+}
+
+.dashboard-agent-row,
+.dashboard-agent-name {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-agent-row {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dashboard-agent-name {
+  gap: 8px;
+}
+
+.dashboard-agent-label,
+.dashboard-activity-row {
+  font-size: 13px;
+}
+
+.dashboard-activity-item {
+  padding: 4px 0;
+}
+
+.dashboard-activity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dashboard-activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-activity-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-activity-time {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+}
+
+.dashboard-column-status,
+.dashboard-column-source {
+  width: 100px;
+}
+
+.dashboard-column-updated {
+  width: 160px;
+}
+
+.dashboard-column-actions {
+  width: 80px;
+}
+
+.dashboard-article-time {
+  color: var(--aw-text-secondary);
+  font-size: 12px;
+}
+
+.dashboard-table-scroll {
+  overflow-x: auto;
+}
+
+.dashboard-table-scroll .n-table {
+  min-width: 720px;
+}
+
+@media (max-width: 720px) {
+  .dashboard-pipeline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-pipeline__steps {
+    justify-content: flex-start;
+  }
+}

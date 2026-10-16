@@ -1,0 +1,59 @@
+# === Java / Maven ===
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+dependency-reduced-pom.xml
+
+# === IDE ===
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# === Node (frontend) ===
+node_modules/
+data/generated-images/
+.next/
+dist/
+
+# === Env ===
+.env
+.env.local
+.env.*.local
+*.pem
+
+# === Docker ===
+docker-compose.override.yml
+
+# === AgentWriter specific ===
+.codegraph/
+.omo/
+
+# === Logs ===
+logs/
+*.log.gz
+
+# === Temp ===
+tmp/
+temp/
+
+# === AI ===
+.opencode
+openspec
+AGENTS.md
+
+# === Maven Wrapper（不随仓库分发）===
+mvnw.cmd
+mvnw

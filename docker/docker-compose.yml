@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: agentwriter-postgres
+    hostname: agentwriter-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agentwriter}
+      POSTGRES_USER: ${POSTGRES_USER:-agentwriter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentwriter_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - agentwriter-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentwriter}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  pgdata:
+    name: agentwriter-pgdata
+
+networks:
+  agentwriter-net:
+    name: agentwriter-net
+    driver: bridge

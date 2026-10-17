@@ -1,11 +1,13 @@
 package com.agentwriter.service;
 
+import com.agentwriter.common.MarkdownHeadingNumberer;
 import com.agentwriter.dto.ArticleCreateRequest;
 import com.agentwriter.dto.ArticleResponse;
 import com.agentwriter.entity.Article;
 import com.agentwriter.entity.ArticleStatus;
 import com.agentwriter.exception.ArticleNotFoundException;
 import com.agentwriter.exception.ArticleTransitionConflictException;
+import com.agentwriter.exception.DuplicateArticleException;
 import com.agentwriter.repository.ArticleRepository;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,22 @@ public class ArticleService {
         article.setStatus(ArticleStatus.DRAFT.databaseValue());
         var saved = articleRepository.save(article);
         return ArticleResponse.from(saved);
+    }
+
+    /**
+     * 生成前的去重校验：若已存在相同标题（忽略大小写、首尾空格）且非失败状态的文章，则抛出
+     * {@link DuplicateArticleException} 跳过本次生成；仅存在 FAILED 文章时允许重新生成。
+     */
+    public void ensureNoDuplicateTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return;
+        }
+        List<Article> existing = articleRepository.findByTitleIgnoreCaseAndStatusNot(
+                title.trim(), ArticleStatus.FAILED.databaseValue());
+        if (!existing.isEmpty()) {
+            Article first = existing.getFirst();
+            throw new DuplicateArticleException(title.trim(), first.getId(), first.getStatus());
+        }
     }
 
     public ArticleResponse findById(Long id) {
@@ -87,11 +105,12 @@ public class ArticleService {
     }
 
     public ArticleResponse completeGeneration(Long id, String contentMd) {
+        String normalized = MarkdownHeadingNumberer.numberize(contentMd);
         int updated = articleRepository.completeGenerationWithContent(
                 id,
                 ArticleStatus.GENERATING.databaseValue(),
                 ArticleStatus.GENERATED.databaseValue(),
-                contentMd);
+                normalized);
         if (updated == 0) {
             if (!articleRepository.existsById(id)) {
                 throw new ArticleNotFoundException(id);

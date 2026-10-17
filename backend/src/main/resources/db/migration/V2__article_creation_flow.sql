@@ -1,9 +1,10 @@
 -- ============================================================
--- V1: 文章创建流程改造 - 新增模板、风格表及文章表扩展
+-- V2: 文章创建流程改造 - 新增模板、风格表及文章表扩展
+-- （幂等化：可在 Hibernate 已建表的库上安全重复执行）
 -- ============================================================
 
 -- 1. 创建文章模板表
-CREATE TABLE article_template (
+CREATE TABLE IF NOT EXISTS article_template (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -24,7 +25,7 @@ COMMENT ON COLUMN article_template.cover_rule IS '封面图规则';
 COMMENT ON COLUMN article_template.enabled IS '是否启用';
 
 -- 2. 创建写作风格表
-CREATE TABLE writer_style (
+CREATE TABLE IF NOT EXISTS writer_style (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -41,16 +42,16 @@ COMMENT ON COLUMN writer_style.tone_prompt IS '语气提示词，拼入 WriterAg
 COMMENT ON COLUMN writer_style.features IS '风格特征标签（如：技术深度、通俗易懂）';
 COMMENT ON COLUMN writer_style.enabled IS '是否启用';
 
--- 3. 文章表新增字段
+-- 3. 文章表新增字段（幂等：列已存在则跳过）
 ALTER TABLE article
-    ADD COLUMN template_id BIGINT REFERENCES article_template(id),
-    ADD COLUMN style_id BIGINT REFERENCES writer_style(id),
-    ADD COLUMN generation_progress TEXT;
+    ADD COLUMN IF NOT EXISTS template_id BIGINT REFERENCES article_template(id),
+    ADD COLUMN IF NOT EXISTS style_id BIGINT REFERENCES writer_style(id),
+    ADD COLUMN IF NOT EXISTS generation_progress TEXT;
 
 COMMENT ON COLUMN article.template_id IS '关联的文章模板';
 COMMENT ON COLUMN article.style_id IS '关联的写作风格';
 COMMENT ON COLUMN article.generation_progress IS '生成进度 JSON，如 {"currentStep":"writer","totalSteps":5,"progress":40}';
 
--- 4. 索引
-CREATE INDEX idx_article_template_id ON article(template_id);
-CREATE INDEX idx_article_style_id ON article(style_id);
+-- 4. 索引（幂等）
+CREATE INDEX IF NOT EXISTS idx_article_template_id ON article(template_id);
+CREATE INDEX IF NOT EXISTS idx_article_style_id ON article(style_id);

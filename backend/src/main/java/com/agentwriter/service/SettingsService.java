@@ -68,8 +68,8 @@ public class SettingsService {
     ) {
         this.configRepository = configRepository;
         this.objectMapper = objectMapper;
-        this.defaultLlm = new LlmSettingsUpdate(llmEnabled, llmProvider, llmApiUrl, llmModel, llmTimeout);
-        this.defaultPublisher = new PublisherSettingsUpdate(new WechatSettingsUpdate(wxEnabled, wxAppId, wxAuthor, wxThumbMediaId));
+        this.defaultLlm = new LlmSettingsUpdate(llmEnabled, llmProvider, llmApiUrl, llmModel, llmTimeout, null);
+        this.defaultPublisher = new PublisherSettingsUpdate(new WechatSettingsUpdate(wxEnabled, wxAppId, wxAuthor, wxThumbMediaId, null));
         this.defaultSchedule = new ScheduleSettingsUpdate(schedEnabled, schedCron);
         this.llmApiKey = llmApiKey;
         this.wechatAppSecret = wxAppSecret;
@@ -84,8 +84,13 @@ public class SettingsService {
 
     public LlmSettingsView updateLlmConfig(LlmSettingsUpdate config) {
         validateLlm(config, false);
-        saveConfig("llm", config);
-        return toLlmView(config);
+        LlmSettingsUpdate stored = readConfig("llm", LlmSettingsUpdate.class, defaultLlm);
+        LlmSettingsUpdate toSave = new LlmSettingsUpdate(
+                config.enabled(), config.provider(), config.apiUrl(), config.model(), config.timeout(),
+                resolveSecretOnUpdate(config.apiKey(), stored.apiKey())
+        );
+        saveConfig("llm", toSave);
+        return toLlmView(toSave);
     }
 
     public LlmRuntimeConfig getLlmRuntimeConfig() {
@@ -95,8 +100,12 @@ public class SettingsService {
                 config.enabled(), config.provider(), config.apiUrl(), config.model(), effectiveLlmTimeout(config.timeout()));
     }
 
+    /**
+     * 返回 LLM API Key：优先界面保存的凭据，其次 yml/环境变量中的 agentwriter.llm.api-key。
+     */
     public String getLlmApiKey() {
-        return llmApiKey;
+        LlmSettingsUpdate stored = readConfig("llm", LlmSettingsUpdate.class, defaultLlm);
+        return hasText(stored.apiKey()) ? stored.apiKey() : llmApiKey;
     }
 
     public PublisherSettingsView getPublisherConfig() {
@@ -107,8 +116,17 @@ public class SettingsService {
 
     public PublisherSettingsView updatePublisherConfig(PublisherSettingsUpdate config) {
         validatePublisher(config, false);
-        saveConfig("publisher", config);
-        return toPublisherView(config);
+        PublisherSettingsUpdate stored = readConfig("publisher", PublisherSettingsUpdate.class, defaultPublisher);
+        WechatSettingsUpdate storedWechat = stored != null && stored.wechat() != null
+                ? stored.wechat()
+                : new WechatSettingsUpdate(false, "", "", "", null);
+        WechatSettingsUpdate wechat = config.wechat();
+        WechatSettingsUpdate toSaveWechat = new WechatSettingsUpdate(
+                wechat.enabled(), wechat.appId(), wechat.author(), wechat.thumbMediaId(),
+                resolveSecretOnUpdate(wechat.appSecret(), storedWechat.appSecret())
+        );
+        saveConfig("publisher", new PublisherSettingsUpdate(toSaveWechat));
+        return toPublisherView(toSaveWechat);
     }
 
     public PublisherRuntimeConfig getPublisherRuntimeConfig() {
@@ -116,7 +134,7 @@ public class SettingsService {
         validatePublisher(config, true);
         WechatSettingsUpdate wechat = config.wechat();
         return new PublisherRuntimeConfig(new WechatRuntimeConfig(
-                wechat.enabled(), wechat.appId(), wechatAppSecret, wechat.author(), wechat.thumbMediaId()
+                wechat.enabled(), wechat.appId(), effectiveWechatAppSecret(wechat.appSecret()), wechat.author(), wechat.thumbMediaId()
         ));
     }
 
@@ -148,15 +166,20 @@ public class SettingsService {
 
     private LlmSettingsView toLlmView(LlmSettingsUpdate config) {
         return new LlmSettingsView(
-                config.enabled(), config.provider(), config.apiUrl(), config.model(), effectiveLlmTimeout(config.timeout()), hasText(llmApiKey)
+                config.enabled(), config.provider(), config.apiUrl(), config.model(), effectiveLlmTimeout(config.timeout()),
+                hasText(effectiveLlmApiKey(config.apiKey()))
         );
     }
 
-    private PublisherSettingsView toPublisherView(PublisherSettingsUpdate config) {
-        WechatSettingsUpdate wechat = config.wechat();
+    private PublisherSettingsView toPublisherView(WechatSettingsUpdate wechat) {
         return new PublisherSettingsView(new WechatSettingsView(
-                wechat.enabled(), wechat.appId(), wechat.author(), wechat.thumbMediaId(), hasText(wechatAppSecret)
+                wechat.enabled(), wechat.appId(), wechat.author(), wechat.thumbMediaId(),
+                hasText(effectiveWechatAppSecret(wechat.appSecret()))
         ));
+    }
+
+    private PublisherSettingsView toPublisherView(PublisherSettingsUpdate config) {
+        return toPublisherView(config.wechat());
     }
 
     private <T> T readConfig(String key, Class<T> type, T fallback) {
@@ -167,13 +190,7 @@ public class SettingsService {
 
     private <T> T deserialize(String key, String value, Class<T> type) {
         try {
-            JsonNode payload = objectMapper.readTree(value);
-            if (containsCredentialField(payload)) {
-                throw new SystemConfigMalformedException(key, new IllegalArgumentException("存储配置中禁止包含凭据字段"));
-            }
-            return objectMapper.treeToValue(payload, type);
-        } catch (SystemConfigMalformedException ex) {
-            throw ex;
+            return objectMapper.treeToValue(objectMapper.readTree(value), type);
         } catch (Exception ex) {
             throw new SystemConfigMalformedException(key, ex);
         }
@@ -249,16 +266,29 @@ public class SettingsService {
         return value != null && !value.isBlank();
     }
 
-    private static boolean containsCredentialField(JsonNode node) {
-        if (node.isObject() && (node.has("apiKey") || node.has("appSecret") || node.has("api-key") || node.has("app-secret"))) {
-            return true;
+    /**
+     * 界面提交凭据的解析规则：
+     * <ul>
+     *   <li>null（未提交）→ 保持已保存的凭据不变</li>
+     *   <li>空串 → 清除已保存的凭据（回退到 yml/环境变量兜底）</li>
+     *   <li>非空 → 覆盖保存新凭据</li>
+     * </ul>
+     */
+    private static String resolveSecretOnUpdate(String submitted, String previouslyStored) {
+        if (submitted == null) {
+            return previouslyStored;
         }
-        for (JsonNode child : node) {
-            if (containsCredentialField(child)) {
-                return true;
-            }
-        }
-        return false;
+        return submitted.isBlank() ? null : submitted;
+    }
+
+    /** 运行时 LLM 凭据：界面保存的优先，否则回退 yml/环境变量中的 agentwriter.llm.api-key */
+    private String effectiveLlmApiKey(String storedApiKey) {
+        return hasText(storedApiKey) ? storedApiKey : llmApiKey;
+    }
+
+    /** 运行时微信密钥：界面保存的优先，否则回退 yml/环境变量中的 agentwriter.publisher.wechat.app-secret */
+    private String effectiveWechatAppSecret(String storedAppSecret) {
+        return hasText(storedAppSecret) ? storedAppSecret : wechatAppSecret;
     }
 
     private static int effectiveLlmTimeout(int timeout) {

@@ -2,6 +2,7 @@ package com.agentwriter.common;
 
 import com.agentwriter.exception.ArticleNotFoundException;
 import com.agentwriter.exception.ArticleTransitionConflictException;
+import com.agentwriter.exception.DuplicateArticleException;
 import com.agentwriter.exception.ImageGenerationUnavailableException;
 import com.agentwriter.exception.TopicNotFoundException;
 import com.agentwriter.exception.PublicationFailedException;
@@ -64,6 +65,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ArticleTransitionConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiResponse<Void> handleArticleTransitionConflict(ArticleTransitionConflictException ex) {
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateArticleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleDuplicateArticle(DuplicateArticleException ex) {
         return ApiResponse.error(ex.getMessage());
     }
 

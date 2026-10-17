@@ -9,7 +9,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/agentwriter
     username: postgres
-    password: ${AGENTWRITER_DB_PASSWORD:}
+    password:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -23,10 +23,9 @@ spring:
           batch_size: 25
         order_inserts: true
         order_updates: true
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+  # 数据库迁移由 Flyway 管理（Spring Boot 4 已移除 Flyway 自动配置，
+  # 迁移在 com.agentwriter.config.FlywayConfig 中手动注册执行；
+  # 迁移脚本统一位于 classpath:db/migration，V1 全量建库 + V2~V6 增量变更）。
   servlet:
     multipart:
       max-file-size: 10MB
@@ -49,46 +48,46 @@ agentwriter:
     rss-feeds: >
       https://news.ycombinator.com/rss
     use-llm: true
-    proxy-host: ${AGENTWRITER_PROXY_HOST:}
-    proxy-port: ${AGENTWRITER_PROXY_PORT:0}
+    proxy-host:
+    proxy-port: 0
 
   research:
     search-url: "https://s.jina.ai/{topic}"
     max-sources: 5
     use-llm: true
-    connect-timeout-seconds: ${AGENTWRITER_RESEARCH_CONNECT_TIMEOUT_SECONDS:15}
-    response-timeout-seconds: ${AGENTWRITER_RESEARCH_RESPONSE_TIMEOUT_SECONDS:45}
+    connect-timeout-seconds: 15
+    response-timeout-seconds: 45
 
   llm:
     enabled: true
     provider: agnes
     api-url: https://apihub.agnes-ai.com/v1
-    api-key: ${AGNES_API_KEY:}
+    api-key:
     model: agnes-2.5-flash
-    timeout: ${AGENTWRITER_LLM_TIMEOUT:120}
+    timeout: 120
   # Agnes 暂未提供 embedding 接口，RAG 默认使用 Stub（enabled=false）；如需启用，请接入兼容 OpenAI /embeddings 的服务。
   embedding:
     enabled: false
     api-url: https://apihub.agnes-ai.com/v1
-    api-key: ${AGENTWRITER_EMBEDDING_API_KEY:}
+    api-key:
     model: text-embedding-ada-002
     dimensions: 1536
     timeout: 30
   image:
-    enabled: ${AGENTWRITER_IMAGE_ENABLED:false}
-    comfy-base-url: ${AGENTWRITER_IMAGE_COMFY_BASE_URL:http://localhost:8188}
-    workflow-template: ${AGENTWRITER_IMAGE_WORKFLOW_TEMPLATE:}
-    storage-directory: ${AGENTWRITER_IMAGE_STORAGE_DIRECTORY:data/generated-images}
-    poll-interval-millis: ${AGENTWRITER_IMAGE_POLL_INTERVAL_MILLIS:1000}
-    timeout-seconds: ${AGENTWRITER_IMAGE_TIMEOUT_SECONDS:300}
+    enabled: false
+    comfy-base-url: http://localhost:8188
+    workflow-template:
+    storage-directory: data/generated-images
+    poll-interval-millis: 1000
+    timeout-seconds: 300
   publisher:
     wechat:
       enabled: false
-      app-id: ${WECHAT_APP_ID:}
-      app-secret: ${WECHAT_APP_SECRET:}
-      api-base-url: ${WECHAT_API_BASE_URL:https://api.weixin.qq.com}
+      app-id:
+      app-secret:
+      api-base-url: https://api.weixin.qq.com
       author: 林哈哈
-      thumb-media-id: ${WECHAT_THUMB_MEDIA_ID:}
+      thumb-media-id:
   schedule:
     enabled: true
     cron: 0 0 8 * * ?

@@ -31,7 +31,7 @@
 }
 
 .articles-refresh-button {
-  --focus-ring: 2px solid #63e2b7;
+  --focus-ring: 2px solid var(--aw-accent);
 }
 
 .articles-refresh-button:focus-visible {
@@ -56,13 +56,13 @@
 
 .articles-empty {
   padding: 40px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--aw-text-muted);
   text-align: center;
 }
 
 .article-id-cell {
   min-width: 40px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--aw-text-muted);
   white-space: nowrap;
 }
 
@@ -71,7 +71,7 @@
 }
 
 .article-time-cell {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--aw-text-secondary);
   font-size: 12px;
 }
 
@@ -98,7 +98,7 @@
 .articles-field-label {
   display: block;
   margin-bottom: 6px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--aw-text-secondary);
   font-size: 13px;
 }
 
@@ -116,7 +116,7 @@
 }
 
 .article-images-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--aw-border-strong);
   padding-top: 16px;
 }
 
@@ -134,7 +134,7 @@
 
 .article-images-hint {
   margin: -2px 0 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--aw-text-secondary);
   font-size: 12px;
 }
 
@@ -150,7 +150,7 @@
   min-width: 0;
   flex-direction: column;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--aw-border);
   border-radius: 6px;
   padding: 10px;
 }
@@ -159,7 +159,7 @@
   min-height: 22px;
   gap: 6px;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--aw-text-secondary);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -389,7 +389,7 @@ html:not(.dark) .wechat-preview-phone {
 .articles-field-label {
   display: block;
   margin-bottom: 6px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--aw-text-secondary);
   font-size: 13px;
 }
 

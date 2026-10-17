@@ -56,8 +56,8 @@ public class RoutingLLMService implements LLMService {
         }
         if (credential == null || credential.isBlank()) {
             throw new LLMUnavailableException(
-                    provider + " LLM 凭据未在 " + credentialName
-                            + " 或 agentwriter.llm.api-key 中配置");
+                    provider + " LLM 凭据未在环境变量 " + credentialName
+                            + "、系统设置界面或 agentwriter.llm.api-key 中配置");
         }
         String resolvedCredential = credential;
 

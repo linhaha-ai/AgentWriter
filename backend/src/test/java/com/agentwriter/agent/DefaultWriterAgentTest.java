@@ -42,20 +42,22 @@ class DefaultWriterAgentTest {
         var result = agent.write("Java 21 Guide", "# Introduction\n## Body");
 
         assertThat(result).isNotNull();
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).doesNotContain("\"success\"");
+        assertThat(result).isEqualTo("# Java 21\n\nVirtual threads are...");
     }
 
     @Test
-    void shouldIncludeTitleInArticle() {
+    void shouldExtractArticleContent() {
         when(promptService.loadPrompt("writer")).thenReturn("You are a writer");
         when(llmService.generate(anyString(), anyString()))
                 .thenReturn("""
-                        {"success": true, "data": {"title": "Rust vs Go", "content": "# Comparison\\n\\nBoth are great..."}}
+                        {"success": true, "data": {"title": "Rust vs Go", "content": "# Rust vs Go\\n\\nBoth are great..."}}
                         """);
 
         var result = agent.write("Rust vs Go", "# Intro\n## Performance");
 
         assertThat(result).contains("Rust vs Go");
+        assertThat(result).contains("Both are great");
     }
 
     @Test
@@ -69,7 +71,8 @@ class DefaultWriterAgentTest {
         var result = agent.write("Empty Outline", "");
 
         assertThat(result).isNotNull();
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).doesNotContain("\"success\"");
+        assertThat(result).contains("No outline provided");
     }
 
     @Test
@@ -84,5 +87,16 @@ class DefaultWriterAgentTest {
 
         assertThat(result).contains("**bold**");
         assertThat(result).contains("`code`");
+    }
+
+    @Test
+    void shouldFallbackToRawResponseWhenNotJson() {
+        when(promptService.loadPrompt("writer")).thenReturn("You are a writer");
+        when(llmService.generate(anyString(), anyString()))
+                .thenReturn("# Plain Markdown\n\nDirect content.");
+
+        var result = agent.write("Plain", "# Heading");
+
+        assertThat(result).isEqualTo("# Plain Markdown\n\nDirect content.");
     }
 }

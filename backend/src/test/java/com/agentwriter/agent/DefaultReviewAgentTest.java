@@ -39,21 +39,22 @@ class DefaultReviewAgentTest {
         var result = agent.review("Original Title", "Original content with typo");
 
         assertThat(result).isNotNull();
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).doesNotContain("\"success\"");
+        assertThat(result).isEqualTo("# Improved\n\nFixed grammar.");
     }
 
     @Test
-    void shouldIdentifyIssues() {
+    void shouldPreferFixedContentField() {
         when(promptService.loadPrompt("review")).thenReturn("You are a reviewer");
         when(llmService.generate(anyString(), anyString()))
                 .thenReturn("""
-                        {"success": true, "data": {"title": "Reviewed", "content": "# Fixed", "changes": ["Fixed grammar", "Improved structure"]}}
+                        {"success": true, "data": {"issues": [], "content": "old content", "fixedContent": "# Fixed\\n\\nNew revised content."}}
                         """);
 
         var result = agent.review("Test", "Bad content");
 
-        assertThat(result).contains("Fixed grammar");
-        assertThat(result).contains("Improved structure");
+        assertThat(result).isEqualTo("# Fixed\n\nNew revised content.");
+        assertThat(result).doesNotContain("old content");
     }
 
     @Test
@@ -66,7 +67,7 @@ class DefaultReviewAgentTest {
 
         var result = agent.review("", "");
 
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -75,11 +76,33 @@ class DefaultReviewAgentTest {
         when(promptService.loadPrompt("review")).thenReturn("You are a reviewer");
         when(llmService.generate(anyString(), anyString()))
                 .thenReturn("""
-                        {"success": true, "data": {"title": "Long Review", "content": "# Reviewed", "changes": []}}
+                        {"success": true, "data": {"title": "Long Review", "fixedContent": "# Reviewed", "changes": []}}
                         """);
 
         var result = agent.review("Long", longContent);
 
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).isEqualTo("# Reviewed");
+    }
+
+    @Test
+    void shouldFallbackToRawResponseWhenNotJson() {
+        when(promptService.loadPrompt("review")).thenReturn("You are a reviewer");
+        when(llmService.generate(anyString(), anyString()))
+                .thenReturn("# Plain Markdown\n\nReviewed.");
+
+        var result = agent.review("Plain", "content");
+
+        assertThat(result).isEqualTo("# Plain Markdown\n\nReviewed.");
+    }
+
+    @Test
+    void shouldFallbackToInputWhenEnvelopeIsBroken() {
+        when(promptService.loadPrompt("review")).thenReturn("You are a reviewer");
+        when(llmService.generate(anyString(), anyString()))
+                .thenReturn("```json\n{\"success\": true, \"data\": {\"fixedContent\": \"# Broken \\\" quote\"}");
+
+        var result = agent.review("Plain", "# Original\n\nKeep me.");
+
+        assertThat(result).isEqualTo("# Original\n\nKeep me.");
     }
 }

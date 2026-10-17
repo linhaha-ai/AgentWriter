@@ -1,8 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/agentwriter
+    # 本地开发库：专用容器 agentwriter-postgres 映射在宿主机 5433 端口（5432 被其他项目占用）
+    url: jdbc:postgresql://localhost:5433/agentwriter
     username: postgres
-    password: ${AGENTWRITER_DB_PASSWORD:}
+    password: agentwriter
   jpa:
     hibernate:
       ddl-auto: update
@@ -11,31 +12,31 @@ spring:
 agentwriter:
   topic:
     proxy-host: 127.0.0.1
-    proxy-port: 7897
+    proxy-port: 7890
   llm:
     enabled: true
     provider: agnes
     api-url: https://apihub.agnes-ai.com/v1
-    api-key: ${AGNES_API_KEY:}
+    api-key: sk-XKRhCVmxA2YUVk7OV79c7DGnDzMXvgoATy5JK7pXQWxESaWP
     model: agnes-2.5-flash
-    timeout: ${AGENTWRITER_LLM_TIMEOUT:120}
+    timeout: 120
   embedding:
     enabled: false
   image:
-    enabled: ${AGENTWRITER_IMAGE_ENABLED:false}
-    comfy-base-url: ${AGENTWRITER_IMAGE_COMFY_BASE_URL:http://localhost:8188}
-    workflow-template: ${AGENTWRITER_IMAGE_WORKFLOW_TEMPLATE:}
-    storage-directory: ${AGENTWRITER_IMAGE_STORAGE_DIRECTORY:data/generated-images}
-    poll-interval-millis: ${AGENTWRITER_IMAGE_POLL_INTERVAL_MILLIS:1000}
-    timeout-seconds: ${AGENTWRITER_IMAGE_TIMEOUT_SECONDS:300}
+    enabled: false
+    comfy-base-url: http://localhost:8188
+    workflow-template:
+    storage-directory: data/generated-images
+    poll-interval-millis: 1000
+    timeout-seconds: 300
   publisher:
     wechat:
       enabled: false
-      app-id: ${WECHAT_APP_ID:}
-      app-secret: ${WECHAT_APP_SECRET:}
-      api-base-url: ${WECHAT_API_BASE_URL:https://api.weixin.qq.com}
+      app-id:
+      app-secret:
+      api-base-url: https://api.weixin.qq.com
       author: 林哈哈
-      thumb-media-id: ${WECHAT_THUMB_MEDIA_ID:}
+      thumb-media-id:
 
 #logging:
 #  level:

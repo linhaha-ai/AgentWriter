@@ -69,6 +69,9 @@ public class StepGenerationService {
                 .map(topicService::findById)
                 .toList();
 
+        // 1. 生成前去重：已存在相同标题的文章则跳过本次生成
+        articleService.ensureNoDuplicateTitle(request.title());
+
         // 2. 创建文章
         var article = new Article();
         article.setTitle(request.title().trim());

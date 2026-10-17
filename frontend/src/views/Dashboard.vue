@@ -53,6 +53,31 @@ const sourceLabel: Record<string, string> = {
   manual: '手动',
 }
 
+/** 步骤徽章配色（最近活动高亮用） */
+const stepTone: Record<string, 'info' | 'success' | 'warning' | 'error' | 'default'> = {
+  topic: 'info',
+  topic_discovery: 'info',
+  research: 'info',
+  outline: 'warning',
+  writer: 'success',
+  review: 'warning',
+  seo: 'info',
+  publish: 'default',
+  publisher: 'default',
+  rag_store: 'default',
+  error: 'error',
+}
+
+/** 从后端 message（"[step] 内容"）中解析出步骤名与正文 */
+function parseActivity(message: string): { step: string; text: string } {
+  const m = message.match(/^\[([^\]]+)\]\s*([\s\S]*)$/)
+  return m ? { step: m[1], text: m[2] } : { step: '', text: message }
+}
+
+function stepToneOf(step: string): 'info' | 'success' | 'warning' | 'error' | 'default' {
+  return stepTone[step.toLowerCase()] ?? 'default'
+}
+
 function agentStatusLabel(agent: AgentStatus): string {
   if (agent.status === 'running') return '运行中'
   if (agent.status === 'idle') return '待命'
@@ -117,8 +142,8 @@ function agentStatusLabel(agent: AgentStatus): string {
       </div>
     </section>
 
-    <!-- 系统与智能体状态 -->
-    <n-grid cols="1 m:3" responsive="screen" :x-gap="16" :y-gap="16">
+    <!-- 系统与智能体状态（1:1:3 非对称布局：状态区收窄，最近活动加宽突出） -->
+    <n-grid cols="1 m:5" responsive="screen" :x-gap="16" :y-gap="16">
       <!-- 系统状态 -->
       <n-grid-item span="1">
         <n-card title="系统状态" size="small" class="dashboard-card" :bordered="true">
@@ -153,15 +178,20 @@ function agentStatusLabel(agent: AgentStatus): string {
       </n-grid-item>
 
       <!-- 最近活动 -->
-      <n-grid-item span="1">
+      <n-grid-item span="3">
         <n-card title="最近活动" size="small" class="dashboard-card" :bordered="true">
           <n-list>
             <n-list-item v-for="act in store.activities.slice(0, 6)" :key="act.id" class="dashboard-activity-item">
               <div class="dashboard-activity-row">
                 <n-icon><component :is="activityIcon[act.type]" /></n-icon>
                 <div class="dashboard-activity-content">
-                  <div class="dashboard-activity-message">{{ act.message }}</div>
-                  <div class="dashboard-activity-time">{{ act.time }}</div>
+                  <div class="dashboard-activity-head">
+                    <n-tag :type="stepToneOf(parseActivity(act.message).step)" size="tiny" round class="dashboard-activity-step">
+                      {{ parseActivity(act.message).step || '活动' }}
+                    </n-tag>
+                    <span class="dashboard-activity-time">{{ act.time }}</span>
+                  </div>
+                  <div class="dashboard-activity-message">{{ parseActivity(act.message).text }}</div>
                 </div>
               </div>
             </n-list-item>

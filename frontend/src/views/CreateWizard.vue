@@ -458,13 +458,14 @@ function logStatusType(status: GenerationLog['status']) {
 
 <style scoped>
 .create-wizard {
-  --aw-color-accent: #18a058;
-  --aw-color-text-primary: rgba(255, 255, 255, 0.85);
-  --aw-color-text-secondary: rgba(255, 255, 255, 0.52);
-  --aw-color-surface-hover: rgba(255, 255, 255, 0.06);
-  --aw-color-surface-selected: rgba(24, 160, 88, 0.1);
-  --aw-color-border: rgba(255, 255, 255, 0.08);
-  --aw-color-accent-ring: rgba(24, 160, 88, 0.2);
+  /* 选择卡片本地令牌：统一映射到全局主题变量，随亮/暗主题自动切换 */
+  --aw-color-accent: var(--aw-accent);
+  --aw-color-text-primary: var(--aw-text-primary);
+  --aw-color-text-secondary: var(--aw-text-secondary);
+  --aw-color-surface-hover: var(--aw-bg-muted);
+  --aw-color-surface-selected: var(--aw-accent-subtle);
+  --aw-color-border: var(--aw-border);
+  --aw-color-accent-ring: var(--aw-accent-subtle);
   --aw-motion-fast: 180ms;
   border: 1px solid var(--aw-border);
   background: var(--aw-bg-shell);

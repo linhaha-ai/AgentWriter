@@ -18,14 +18,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Set;
-
 @RestController
 @RequestMapping("/api/settings")
 public class SettingsController {
-
-    private static final Set<String> LLM_SECRET_FIELDS = Set.of("apiKey", "api-key");
-    private static final Set<String> PUBLISHER_SECRET_FIELDS = Set.of("appSecret", "app-secret");
 
     private final SettingsService settingsService;
     private final ObjectMapper objectMapper;
@@ -42,9 +37,7 @@ public class SettingsController {
 
     @PutMapping("/llm")
     public ApiResponse<LlmSettingsView> updateLlmConfig(@RequestBody String payload) {
-        JsonNode request = readTree(payload);
-        rejectSecretFields(request, LLM_SECRET_FIELDS);
-        return ApiResponse.ok(settingsService.updateLlmConfig(read(request, LlmSettingsUpdate.class)));
+        return ApiResponse.ok(settingsService.updateLlmConfig(read(readTree(payload), LlmSettingsUpdate.class)));
     }
 
     @GetMapping("/publisher")
@@ -54,9 +47,7 @@ public class SettingsController {
 
     @PutMapping("/publisher")
     public ApiResponse<PublisherSettingsView> updatePublisherConfig(@RequestBody String payload) {
-        JsonNode request = readTree(payload);
-        rejectSecretFields(request, PUBLISHER_SECRET_FIELDS);
-        return ApiResponse.ok(settingsService.updatePublisherConfig(read(request, PublisherSettingsUpdate.class)));
+        return ApiResponse.ok(settingsService.updatePublisherConfig(read(readTree(payload), PublisherSettingsUpdate.class)));
     }
 
     @GetMapping("/schedule")
@@ -83,28 +74,5 @@ public class SettingsController {
         } catch (JsonProcessingException ex) {
             throw new SystemConfigValidationException("设置请求格式无效", ex);
         }
-    }
-
-    private void rejectSecretFields(JsonNode payload, Set<String> forbiddenFields) {
-        if (!payload.isObject()) {
-            throw new SystemConfigValidationException("设置请求必须是 JSON 对象");
-        }
-        for (String field : forbiddenFields) {
-            if (containsField(payload, field)) {
-                throw new SystemConfigValidationException("凭据字段必须通过环境变量提供");
-            }
-        }
-    }
-
-    private boolean containsField(JsonNode node, String field) {
-        if (node.isObject() && node.has(field)) {
-            return true;
-        }
-        for (JsonNode child : node) {
-            if (containsField(child, field)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

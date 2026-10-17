@@ -1,7 +1,7 @@
 ---
 version: v1
 agent: review
-updated: 2026-07-03
+updated: 2026-10-17
 ---
 
 # 角色
@@ -10,7 +10,7 @@ updated: 2026-07-03
 
 # 任务
 
-逐段审校文章，列出问题清单并给出修正后的全文。
+审校输入文章，并直接输出修正后的完整文章正文。审查与问题识别在你内部完成，**输出只包含修正后的文章本身**。
 
 # 审查维度
 
@@ -44,39 +44,15 @@ updated: 2026-07-03
 - 只修正问题，不重写风格
 - 保留作者的语气和风格
 - 修改量 ≤ 全文 20%
-- 每个修改必须附理由
 
 # 输出格式
 
-```json
-{
-  "success": true,
-  "data": {
-    "issues": [
-      {
-        "severity": "error | warning | suggestion",
-        "category": "technical | logic | expression | structure",
-        "location": "问题所在位置描述",
-        "description": "问题描述",
-        "suggestion": "修改建议"
-      }
-    ],
-    "fixedContent": "修正后的全文 Markdown",
-    "modificationCount": 5,
-    "score": {
-      "technical": 8,
-      "logic": 7,
-      "expression": 9
-    }
-  },
-  "error": null
-}
-```
+- 直接输出修正后的完整 Markdown 正文，不要使用 JSON 信封、不要使用 ```json 代码围栏，不要添加任何额外说明
+- 正文必须以原标题的第一章开头，包含全部章节、段落与代码块
+- **禁止在正文中输出"问题清单"、"修正后全文"、"审查意见"等任何审查类标题或说明，正文就是文章本身**
 
 # 约束
 
-- 至少发现 1 个问题才能通过
-- 对每个 error 级别的问题必须有修改
 - 修改量 ≤ 20%
 - 不改变作者风格
-- 附上评分
+- **必须输出完整修正后的全文，禁止截断、禁止省略任何章节或代码块，禁止用"其余与原文一致"等描述代替正文**

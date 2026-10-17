@@ -24,10 +24,12 @@ import {
 import { errorMessage } from '../api/client'
 import type { Article, ArticleImage, ImageSuggestion } from '../types'
 import AppPageHeader from '../components/AppPageHeader.vue'
+import { useThemeStore } from '../stores/theme'
 import { formatDateTime } from '../utils/date'
 
 const route = useRoute()
 const router = useRouter()
+const themeStore = useThemeStore()
 const article = ref<Article | null>(null)
 const title = ref('')
 const contentMd = ref('')
@@ -45,7 +47,7 @@ const imageActionIds = ref<number[]>([])
 let imagePollTimer: ReturnType<typeof setInterval> | null = null
 
 const articleId = computed(() => Number(route.params.id))
-const editorTheme = computed<Themes>(() => 'dark')
+const editorTheme = computed<Themes>(() => (themeStore.isDark ? 'dark' : 'light'))
 const hasActiveImageTask = computed(() => articleImages.value.some(image => image.status === 'QUEUED' || image.status === 'GENERATING'))
 const canPublish = computed(() => article.value?.status === 'generated')
 
@@ -272,7 +274,8 @@ onUnmounted(() => {
     </n-spin>
   </section>
 
-  <n-modal v-model:show="previewOpen" preset="card" class="wechat-preview-modal" title="微信公众号预览" :style="{ maxWidth: '560px' }">
+  <n-modal v-model:show="previewOpen" preset="card" class="wechat-preview-modal" title="微信公众号预览"
+    :style="{ maxWidth: '560px' }" :mask-style="{ backgroundColor: 'rgba(12, 18, 15, 0.78)' }">
     <div class="wechat-preview-phone">
       <article class="wechat-preview-article">
         <h1>{{ title || '未命名文章' }}</h1>

@@ -20,6 +20,9 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     List<Article> findByStatusOrderByCreatedAtDescIdDesc(String status);
 
+    /** 按标题查找非失败状态的文章（用于生成前去重；忽略大小写与首尾空格） */
+    List<Article> findByTitleIgnoreCaseAndStatusNot(String title, String status);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query("""

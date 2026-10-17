@@ -4,6 +4,7 @@ import com.agentwriter.entity.Article;
 import com.agentwriter.entity.ArticleStatus;
 import com.agentwriter.exception.ArticleNotFoundException;
 import com.agentwriter.exception.ArticleTransitionConflictException;
+import com.agentwriter.exception.DuplicateArticleException;
 import com.agentwriter.repository.ArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -100,6 +102,21 @@ class ArticleServiceTest {
     }
 
     @Test
+    void completeGenerationNumberizesHeadingsBeforeSaving() {
+        when(articleRepository.completeGenerationWithContent(
+                2L, "generating", "generated", "## 1. 引言\n### 1.1 背景\n"))
+                .thenReturn(1);
+        when(articleRepository.findById(2L))
+                .thenReturn(Optional.of(article(2L, "generated", "## 1. 引言\n### 1.1 背景\n")));
+
+        var response = articleService.completeGeneration(2L, "## 引言\n### 背景\n");
+
+        assertThat(response.contentMd()).isEqualTo("## 1. 引言\n### 1.1 背景\n");
+        verify(articleRepository).completeGenerationWithContent(
+                2L, "generating", "generated", "## 1. 引言\n### 1.1 背景\n");
+    }
+
+    @Test
     void rejectsMalformedStatusFilter() {
         assertThatThrownBy(() -> articleService.findByStatus("published"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -139,6 +156,47 @@ class ArticleServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("published");
         verify(articleRepository, never()).save(article);
+    }
+
+    @Test
+    void duplicateTitleSkipsGenerationWhenSameTitleExistsInNonFailedState() {
+        Article existing = article(7L, ArticleStatus.GENERATED.databaseValue());
+        existing.setTitle("Java 21 新特性速览");
+        when(articleRepository.findByTitleIgnoreCaseAndStatusNot(
+                "Java 21 新特性速览", ArticleStatus.FAILED.databaseValue()))
+                .thenReturn(List.of(existing));
+
+        assertThatThrownBy(() -> articleService.ensureNoDuplicateTitle("  Java 21 新特性速览  "))
+                .isInstanceOf(DuplicateArticleException.class)
+                .hasMessageContaining("ID=7")
+                .hasMessageContaining("已存在相同标题的文章");
+    }
+
+    @Test
+    void duplicateTitleAllowsRegenerationWhenOnlyFailedArticlesShareTheTitle() {
+        // 仓库按状态排除 failed，仅存在失败文章时返回空 → 允许重新生成
+        when(articleRepository.findByTitleIgnoreCaseAndStatusNot(
+                "Java 21 新特性速览", ArticleStatus.FAILED.databaseValue()))
+                .thenReturn(List.of());
+
+        assertThatCode(() -> articleService.ensureNoDuplicateTitle("Java 21 新特性速览"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void duplicateTitleAllowsWhenNoMatchingArticleExists() {
+        when(articleRepository.findByTitleIgnoreCaseAndStatusNot(
+                "全新话题", ArticleStatus.FAILED.databaseValue()))
+                .thenReturn(List.of());
+
+        assertThatCode(() -> articleService.ensureNoDuplicateTitle("全新话题"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void duplicateTitleIgnoresBlankTitle() {
+        assertThatCode(() -> articleService.ensureNoDuplicateTitle("   "))
+                .doesNotThrowAnyException();
     }
 
     @Test

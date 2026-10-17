@@ -71,9 +71,13 @@ public class RoutingPublisher implements Publisher {
         if (!config.enabled()) {
             throw new PublisherUnavailableException("微信公众号发布器已禁用");
         }
+        // 凭据优先级：环境变量 WECHAT_APP_SECRET > 界面保存的 AppSecret > yml 配置
         String appSecret = environment.getProperty(WECHAT_APP_SECRET);
         if (appSecret == null || appSecret.isBlank()) {
-            throw new PublisherUnavailableException("微信公众号发布器缺少环境凭据配置");
+            appSecret = config.appSecret();
+        }
+        if (appSecret == null || appSecret.isBlank()) {
+            throw new PublisherUnavailableException("微信公众号发布器缺少凭据配置，请在系统设置中填写或设置 WECHAT_APP_SECRET");
         }
         String apiBaseUrl = environment.getProperty(WECHAT_API_BASE_URL);
         if (apiBaseUrl == null || apiBaseUrl.isBlank()) {

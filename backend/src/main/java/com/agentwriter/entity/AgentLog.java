@@ -36,7 +36,7 @@ public class AgentLog {
     @Column(columnDefinition = "TEXT")
     private String prompt;
 
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     private String response;
 
     @Column(name = "tokens_in")

@@ -1,6 +1,7 @@
 package com.agentwriter.agent.impl;
 
 import com.agentwriter.agent.SEOAgent;
+import com.agentwriter.common.LlmResponseParser;
 import com.agentwriter.service.LLMService;
 import com.agentwriter.service.PromptService;
 import org.slf4j.Logger;
@@ -33,6 +34,13 @@ public class DefaultSEOAgent implements SEOAgent {
 
         String response = llmService.generate(systemPrompt, userMessage);
         log.debug("SEOAgent 返回: {}", response);
-        return response;
+        // 信封格式为 {"success":true,"data":{"content":...}}，提取 SEO 优化后的全文。
+        // 提取失败时：若响应疑似损坏的 JSON 信封，回退到输入的原始文章以免污染下游；
+        // 否则模型直接输出的 Markdown 正文本身即可作为结果。
+        String optimizedContent = LlmResponseParser.extractDataField(response, "content");
+        if (optimizedContent != null) {
+            return optimizedContent;
+        }
+        return LlmResponseParser.looksLikeJsonEnvelope(response) ? content : response;
     }
 }

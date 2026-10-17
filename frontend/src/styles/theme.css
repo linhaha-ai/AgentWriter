@@ -1,22 +1,38 @@
+/* ============================================================
+ * AgentWriter 主题令牌
+ * - :root 为亮色主题（默认，更明亮的界面）
+ * - :root[data-theme='dark'] 为暗色主题（原深色配色）
+ * 切换由 stores/theme.ts 控制，写入 document.documentElement[data-theme]
+ * ============================================================ */
+
 :root {
-  --aw-bg-canvas: #111619;
-  --aw-bg-shell: #151b1f;
-  --aw-bg-elevated: #1a2227;
-  --aw-bg-muted: #202a30;
-  --aw-border: rgba(224, 238, 234, 0.1);
-  --aw-border-strong: rgba(224, 238, 234, 0.18);
-  --aw-text-primary: rgba(245, 250, 248, 0.94);
-  --aw-text-secondary: rgba(221, 232, 227, 0.64);
-  --aw-text-muted: rgba(221, 232, 227, 0.42);
-  --aw-accent: #3bcf9b;
-  --aw-accent-strong: #24b985;
-  --aw-accent-subtle: rgba(59, 207, 155, 0.13);
-  --aw-info: #5b9dff;
-  --aw-warning: #f3b35b;
-  --aw-danger: #ed7777;
+  color-scheme: light;
+
+  --aw-bg-canvas: #f3f5f7;
+  --aw-bg-shell: #ffffff;
+  --aw-bg-elevated: #f8fafb;
+  --aw-bg-muted: #edf1f3;
+  --aw-bg-topbar: rgba(255, 255, 255, 0.88);
+
+  --aw-border: rgba(20, 40, 33, 0.09);
+  --aw-border-strong: rgba(20, 40, 33, 0.16);
+
+  --aw-text-primary: rgba(23, 35, 31, 0.93);
+  --aw-text-secondary: rgba(46, 62, 55, 0.72);
+  --aw-text-muted: rgba(70, 86, 79, 0.5);
+
+  --aw-accent: #18a058;
+  --aw-accent-strong: #0f8a4d;
+  --aw-accent-subtle: rgba(24, 160, 88, 0.1);
+
+  --aw-info: #2080f0;
+  --aw-warning: #f0a020;
+  --aw-danger: #d64545;
+
   --aw-radius: 8px;
   --aw-radius-sm: 6px;
-  --aw-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+  --aw-shadow: 0 16px 36px rgba(15, 32, 26, 0.07);
+
   --aw-spacing-1: 4px;
   --aw-spacing-2: 8px;
   --aw-spacing-3: 12px;
@@ -25,8 +41,42 @@
   --aw-spacing-6: 24px;
 }
 
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --aw-bg-canvas: #111619;
+  --aw-bg-shell: #151b1f;
+  --aw-bg-elevated: #1a2227;
+  --aw-bg-muted: #202a30;
+  --aw-bg-topbar: rgba(21, 27, 31, 0.9);
+
+  --aw-border: rgba(224, 238, 234, 0.1);
+  --aw-border-strong: rgba(224, 238, 234, 0.18);
+
+  --aw-text-primary: rgba(245, 250, 248, 0.94);
+  --aw-text-secondary: rgba(221, 232, 227, 0.64);
+  --aw-text-muted: rgba(221, 232, 227, 0.42);
+
+  --aw-accent: #3bcf9b;
+  --aw-accent-strong: #24b985;
+  --aw-accent-subtle: rgba(59, 207, 155, 0.13);
+
+  --aw-info: #5b9dff;
+  --aw-warning: #f3b35b;
+  --aw-danger: #ed7777;
+
+  --aw-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
 * {
   box-sizing: border-box;
+}
+
+html,
+body {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 body {
@@ -53,6 +103,9 @@ textarea {
   border-radius: var(--aw-radius);
   background: var(--aw-bg-shell);
   box-shadow: var(--aw-shadow);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .aw-section-label {

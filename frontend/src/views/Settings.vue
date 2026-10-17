@@ -21,6 +21,10 @@ const savingSchedule = ref(false)
 const lastError = ref('')
 const lastSuccess = ref('')
 const compactForm = ref(false)
+const llmApiKeyInput = ref('')
+const llmApiKeyCleared = ref(false)
+const wechatAppSecretInput = ref('')
+const wechatAppSecretCleared = ref(false)
 
 function updateCompactForm() {
   compactForm.value = window.innerWidth <= 768
@@ -57,17 +61,23 @@ onBeforeUnmount(() => {
 })
 
 function llmUpdate(config: LlmConfig): LlmConfigUpdate {
-  return {
+  const update: LlmConfigUpdate = {
     enabled: config.enabled,
     provider: config.provider,
     apiUrl: config.apiUrl,
     model: config.model,
     timeout: config.timeout,
   }
+  if (llmApiKeyCleared.value) {
+    update.apiKey = ''
+  } else if (llmApiKeyInput.value.trim()) {
+    update.apiKey = llmApiKeyInput.value.trim()
+  }
+  return update
 }
 
 function publisherUpdate(config: PublisherConfig): PublisherConfigUpdate {
-  return {
+  const update: PublisherConfigUpdate = {
     wechat: {
       enabled: config.wechat.enabled,
       appId: config.wechat.appId,
@@ -75,6 +85,12 @@ function publisherUpdate(config: PublisherConfig): PublisherConfigUpdate {
       thumbMediaId: config.wechat.thumbMediaId,
     },
   }
+  if (wechatAppSecretCleared.value) {
+    update.wechat.appSecret = ''
+  } else if (wechatAppSecretInput.value.trim()) {
+    update.wechat.appSecret = wechatAppSecretInput.value.trim()
+  }
+  return update
 }
 
 async function saveLlm() {
@@ -84,6 +100,8 @@ async function saveLlm() {
   lastSuccess.value = ''
   try {
     llmConfig.value = await saveLlmConfig(llmUpdate(llmConfig.value))
+    llmApiKeyInput.value = ''
+    llmApiKeyCleared.value = false
     lastSuccess.value = 'LLM 配置已保存'
   } catch (error: unknown) {
     lastError.value = errorMessage(error)
@@ -99,6 +117,8 @@ async function savePublisher() {
   lastSuccess.value = ''
   try {
     publisherConfig.value = await savePublisherConfig(publisherUpdate(publisherConfig.value))
+    wechatAppSecretInput.value = ''
+    wechatAppSecretCleared.value = false
     lastSuccess.value = '发布配置已保存'
   } catch (error: unknown) {
     lastError.value = errorMessage(error)
@@ -120,6 +140,16 @@ async function saveSchedule() {
   } finally {
     savingSchedule.value = false
   }
+}
+
+function clearLlmApiKey() {
+  llmApiKeyInput.value = ''
+  llmApiKeyCleared.value = true
+}
+
+function clearWechatAppSecret() {
+  wechatAppSecretInput.value = ''
+  wechatAppSecretCleared.value = true
 }
 </script>
 
@@ -154,13 +184,31 @@ async function saveSchedule() {
           <n-form-item label="API URL">
             <n-input v-model:value="llmConfig.apiUrl" class="settings-input-wide" />
           </n-form-item>
-          <n-form-item label="环境凭据">
+          <n-form-item label="API Key">
             <div class="settings-credential-state">
-              <n-tag :type="llmConfig.credentialConfigured ? 'success' : 'warning'" size="small">
-                {{ llmConfig.credentialConfigured ? '凭据已配置' : '凭据未配置' }}
-              </n-tag>
+              <div class="settings-credential-row">
+                <n-tag :type="llmConfig.credentialConfigured ? 'success' : 'warning'" size="small">
+                  {{ llmConfig.credentialConfigured ? '凭据已配置' : '凭据未配置' }}
+                </n-tag>
+                <n-input
+                  v-model:value="llmApiKeyInput"
+                  type="password"
+                  show-password-on="click"
+                  class="settings-input-wide"
+                  :placeholder="llmConfig.credentialConfigured ? '已保存凭据：输入新值覆盖，留空保持不变' : '请输入 API Key（AGNES/NVIDIA/OPENAI）'"
+                />
+                <n-button
+                  v-if="llmConfig.credentialConfigured"
+                  size="small"
+                  quaternary
+                  type="error"
+                  @click="clearLlmApiKey"
+                >
+                  清除已保存凭据
+                </n-button>
+              </div>
               <span class="settings-helper-text">
-                请设置 AGNES_API_KEY、NVIDIA_API_KEY 或 OPENAI_API_KEY；开发环境也可配置 agentwriter.llm.api-key。
+                可在此手动填写 API Key 并保存；保存后优先使用界面凭据，环境变量与 yml 配置作为兜底。
               </span>
             </div>
           </n-form-item>
@@ -182,13 +230,31 @@ async function saveSchedule() {
           <n-form-item label="微信公众号">
             <n-switch v-model:value="publisherConfig.wechat.enabled" />
           </n-form-item>
-          <n-form-item label="环境凭据">
+          <n-form-item label="AppSecret">
             <div class="settings-credential-state">
-              <n-tag :type="publisherConfig.wechat.credentialConfigured ? 'success' : 'warning'" size="small">
-                {{ publisherConfig.wechat.credentialConfigured ? '凭据已配置' : '凭据未配置' }}
-              </n-tag>
+              <div class="settings-credential-row">
+                <n-tag :type="publisherConfig.wechat.credentialConfigured ? 'success' : 'warning'" size="small">
+                  {{ publisherConfig.wechat.credentialConfigured ? '凭据已配置' : '凭据未配置' }}
+                </n-tag>
+                <n-input
+                  v-model:value="wechatAppSecretInput"
+                  type="password"
+                  show-password-on="click"
+                  class="settings-input-wide"
+                  :placeholder="publisherConfig.wechat.credentialConfigured ? '已保存凭据：输入新值覆盖，留空保持不变' : '请输入微信公众号 AppSecret'"
+                />
+                <n-button
+                  v-if="publisherConfig.wechat.credentialConfigured"
+                  size="small"
+                  quaternary
+                  type="error"
+                  @click="clearWechatAppSecret"
+                >
+                  清除已保存凭据
+                </n-button>
+              </div>
               <span class="settings-helper-text">
-                请在环境变量中设置 WECHAT_APP_SECRET。
+                可在此手动填写 AppSecret 并保存；保存后优先使用界面凭据，环境变量 WECHAT_APP_SECRET 与 yml 配置作为兜底。
               </span>
             </div>
           </n-form-item>

@@ -123,6 +123,7 @@ public class WorkflowEngine {
     }
 
     private ArticleResponse createAndExecute(WorkflowRequest request) {
+        articleService.ensureNoDuplicateTitle(request.title());
         var article = new Article();
         article.setTitle(request.title());
         if (request.topicId() != null) {

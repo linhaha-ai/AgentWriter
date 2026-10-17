@@ -39,22 +39,24 @@ class DefaultSEOAgentTest {
         var result = agent.optimize("# Original\\n\\nOriginal content.");
 
         assertThat(result).isNotNull();
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).doesNotContain("\"success\"");
+        assertThat(result).isEqualTo("# Optimized\n\nSEO content.");
     }
 
     @Test
-    void shouldIncludeKeywords() {
+    void shouldExtractOptimizedContentWithoutEnvelope() {
         when(promptService.loadPrompt("seo")).thenReturn("You are an SEO expert");
         when(llmService.generate(anyString(), anyString()))
                 .thenReturn("""
+                        ```json
                         {"success": true, "data": {"title": "SEO Title", "description": "Desc", "keywords": ["spring", "boot", "java"], "content": "# SEO\\n\\nContent"}}
+                        ```
                         """);
 
         var result = agent.optimize("# Content");
 
-        assertThat(result).contains("spring");
-        assertThat(result).contains("boot");
-        assertThat(result).contains("java");
+        assertThat(result).isEqualTo("# SEO\n\nContent");
+        assertThat(result).doesNotContain("spring", "boot");
     }
 
     @Test
@@ -67,19 +69,41 @@ class DefaultSEOAgentTest {
 
         var result = agent.optimize("");
 
-        assertThat(result).contains("\"success\": true");
+        assertThat(result).isEmpty();
     }
 
     @Test
-    void shouldReturnMetaDescription() {
+    void shouldReturnExtractedContent() {
         when(promptService.loadPrompt("seo")).thenReturn("You are an SEO expert");
         when(llmService.generate(anyString(), anyString()))
                 .thenReturn("""
-                        {"success": true, "data": {"title": "Guide", "description": "A comprehensive guide to Java 21", "keywords": ["java"], "content": "# Guide"}}
+                        {"success": true, "data": {"title": "Guide", "metaDescription": "A comprehensive guide to Java 21", "content": "# Guide"}}
                         """);
 
         var result = agent.optimize("# Guide");
 
-        assertThat(result).contains("comprehensive guide");
+        assertThat(result).isEqualTo("# Guide");
+    }
+
+    @Test
+    void shouldFallbackToRawResponseWhenNotJson() {
+        when(promptService.loadPrompt("seo")).thenReturn("You are an SEO expert");
+        when(llmService.generate(anyString(), anyString()))
+                .thenReturn("# Plain Markdown\n\nSEO content.");
+
+        var result = agent.optimize("# Guide");
+
+        assertThat(result).isEqualTo("# Plain Markdown\n\nSEO content.");
+    }
+
+    @Test
+    void shouldFallbackToInputWhenEnvelopeIsBroken() {
+        when(promptService.loadPrompt("seo")).thenReturn("You are an SEO expert");
+        when(llmService.generate(anyString(), anyString()))
+                .thenReturn("```json\n{\"success\": true, \"data\": {\"content\": \"# Broken \\\" quote\"}");
+
+        var result = agent.optimize("# Original\n\nKeep me.");
+
+        assertThat(result).isEqualTo("# Original\n\nKeep me.");
     }
 }

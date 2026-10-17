@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -37,12 +35,15 @@ public class ExecutionLog {
     @Column(name = "agent_name", length = 100)
     private String agentName;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "JSON")
+    /**
+     * 输入/输出为各步骤的自由文本（Markdown、调试文本等），使用 TEXT 存储。
+     * 原先声明为 JSON，但写入内容并非合法 JSON（如 research 输出为 Markdown），
+     * 会导致 PostgreSQL 报 "invalid input syntax for type json"。
+     */
+    @Column(columnDefinition = "TEXT")
     private String input;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "JSON")
+    @Column(columnDefinition = "TEXT")
     private String output;
 
     @Column(nullable = false, length = 20)

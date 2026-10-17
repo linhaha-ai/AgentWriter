@@ -48,47 +48,45 @@ class SettingsServiceTest {
     }
 
     @Test
-    void updatePersistsOnlyAllowlistedNonSecretFieldsAndViewOnlyExposesCredentialStatus() {
+    void updatePersistsNonSecretFieldsAndManualApiKeyWhileViewOnlyExposesStatus() {
         var updated = service.updateLlmConfig(new LlmSettingsUpdate(
-                true, "openai", "https://api.example.test/v1", "gpt-test", 60
+                true, "openai", "https://api.example.test/v1", "gpt-test", 60, "sk-manual"
         ));
 
         ArgumentCaptor<SystemConfig> captor = ArgumentCaptor.forClass(SystemConfig.class);
         verify(repository).save(captor.capture());
         String savedJson = captor.getValue().getConfigValue();
 
-        assertThat(savedJson).contains("openai", "api.example.test", "gpt-test");
-        assertThat(savedJson).doesNotContain("apiKey", "synthetic-only");
+        assertThat(savedJson).contains("openai", "api.example.test", "gpt-test", "sk-manual");
         assertThat(updated.credentialConfigured()).isTrue();
     }
 
     @Test
-    void updatePublisherPersistsAppIdAuthorAndThumbButNeverCredential() {
+    void updatePublisherPersistsAppIdAuthorThumbAndManualAppSecret() {
         service.updatePublisherConfig(new PublisherSettingsUpdate(new WechatSettingsUpdate(
-                true, "new-app", "New Author", "new-thumb"
+                true, "new-app", "New Author", "new-thumb", "wx-secret-manual"
         )));
 
         ArgumentCaptor<SystemConfig> captor = ArgumentCaptor.forClass(SystemConfig.class);
         verify(repository).save(captor.capture());
         String savedJson = captor.getValue().getConfigValue();
 
-        assertThat(savedJson).contains("new-app", "New Author", "new-thumb");
-        assertThat(savedJson).doesNotContain("appSecret", "synthetic-only");
+        assertThat(savedJson).contains("new-app", "New Author", "new-thumb", "wx-secret-manual");
     }
 
     @Test
     void updateRejectsInvalidProviderUrlTimeoutAndCron() {
         assertThatThrownBy(() -> service.updateLlmConfig(new LlmSettingsUpdate(
-                true, "unsupported", "https://api.example.test", "model", 60
+                true, "unsupported", "https://api.example.test", "model", 60, null
         ))).isInstanceOf(SystemConfigValidationException.class);
         assertThatThrownBy(() -> service.updateLlmConfig(new LlmSettingsUpdate(
-                true, "nvidia", "not-a-url", "model", 60
+                true, "nvidia", "not-a-url", "model", 60, null
         ))).isInstanceOf(SystemConfigValidationException.class);
         assertThatThrownBy(() -> service.updateLlmConfig(new LlmSettingsUpdate(
-                true, "nvidia", "https://api.example.test", "model", 0
+                true, "nvidia", "https://api.example.test", "model", 0, null
         ))).isInstanceOf(SystemConfigValidationException.class);
         assertThatThrownBy(() -> service.updateLlmConfig(new LlmSettingsUpdate(
-                true, "nvidia", "https://api.example.test", "model", 5
+                true, "nvidia", "https://api.example.test", "model", 5, null
         ))).isInstanceOf(SystemConfigValidationException.class);
         assertThatThrownBy(() -> service.updateScheduleConfig(new ScheduleSettingsUpdate(true, "not cron")))
                 .isInstanceOf(SystemConfigValidationException.class);
@@ -130,18 +128,56 @@ class SettingsServiceTest {
     }
 
     @Test
-    void storedCredentialFieldsAreRejectedInsteadOfBeingSilentlyIgnored() {
-        when(repository.findById("llm")).thenReturn(Optional.of(new SystemConfig("llm", "{\"apiKey\":\"synthetic-only\"}")));
+    void storedApiKeyOverridesYmlFallback() {
+        when(repository.findById("llm")).thenReturn(Optional.of(new SystemConfig(
+                "llm", "{\"enabled\":true,\"provider\":\"openai\",\"apiUrl\":\"https://api.example.test/v1\",\"model\":\"model\",\"timeout\":60,\"apiKey\":\"sk-stored\"}")));
 
-        assertThatThrownBy(service::getLlmConfig)
-                .isInstanceOf(SystemConfigMalformedException.class)
-                .hasMessageContaining("llm");
+        assertThat(service.getLlmConfig().credentialConfigured()).isTrue();
+        assertThat(service.getLlmApiKey()).isEqualTo("sk-stored");
+        assertThat(service.getLlmRuntimeConfig().provider()).isEqualTo("openai");
+    }
+
+    @Test
+    void ymlApiKeyIsUsedWhenNoStoredCredential() {
+        when(repository.findById("llm")).thenReturn(Optional.empty());
+
+        assertThat(service.getLlmConfig().credentialConfigured()).isTrue();
+        assertThat(service.getLlmApiKey()).isEqualTo("synthetic-only");
+    }
+
+    @Test
+    void blankApiKeyOnUpdateKeepsPreviouslyStoredCredential() {
+        when(repository.findById("llm")).thenReturn(Optional.of(new SystemConfig(
+                "llm", "{\"enabled\":true,\"provider\":\"openai\",\"apiUrl\":\"https://api.example.test/v1\",\"model\":\"model\",\"timeout\":60,\"apiKey\":\"sk-existing\"}")));
+
+        service.updateLlmConfig(new LlmSettingsUpdate(
+                true, "openai", "https://api.example.test/v1", "model", 60, null));
+
+        ArgumentCaptor<SystemConfig> captor = ArgumentCaptor.forClass(SystemConfig.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getConfigValue()).contains("sk-existing");
+    }
+
+    @Test
+    void explicitEmptyApiKeyClearsStoredCredential() {
+        when(repository.findById("llm")).thenReturn(Optional.of(new SystemConfig(
+                "llm", "{\"enabled\":true,\"provider\":\"openai\",\"apiUrl\":\"https://api.example.test/v1\",\"model\":\"model\",\"timeout\":60,\"apiKey\":\"sk-existing\"}")));
+
+        var updated = service.updateLlmConfig(new LlmSettingsUpdate(
+                true, "openai", "https://api.example.test/v1", "model", 60, ""));
+
+        ArgumentCaptor<SystemConfig> captor = ArgumentCaptor.forClass(SystemConfig.class);
+        verify(repository).save(captor.capture());
+        String savedJson = captor.getValue().getConfigValue();
+        assertThat(savedJson).doesNotContain("sk-existing").contains("\"apiKey\":null");
+        // 清除后视图状态回退到 yml 兜底凭据
+        assertThat(updated.credentialConfigured()).isTrue();
     }
 
     @Test
     void runtimeConfigContainsOnlyLatestNonSecretSettings() {
         service.updateLlmConfig(new LlmSettingsUpdate(
-                true, "openai", "https://api.example.test", "model", 60
+                true, "openai", "https://api.example.test", "model", 60, null
         ));
 
         var runtime = service.getLlmRuntimeConfig();

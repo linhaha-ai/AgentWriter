@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AgentWriter - AI 写作助手</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      // 首屏渲染前应用主题，避免深色/亮色闪烁
+      ;(function () {
+        try {
+          var theme = localStorage.getItem('agentwriter-theme')
+          if (theme !== 'light' && theme !== 'dark') theme = 'light'
+          document.documentElement.dataset.theme = theme
+          document.documentElement.style.colorScheme = theme
+        } catch (e) {
+          /* ignore */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

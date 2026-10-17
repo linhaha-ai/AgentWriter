@@ -10,11 +10,14 @@ import {
   DocumentTextOutline,
   GridOutline,
   MenuOutline,
+  MoonOutline,
   OptionsOutline,
   SparklesOutline,
+  SunnyOutline,
   TrendingUpOutline,
 } from '@vicons/ionicons5'
 import { NButton, NDrawer, NDrawerContent, NIcon } from 'naive-ui'
+import { useThemeStore } from '../stores/theme'
 
 type NavigationItem = {
   readonly key: string
@@ -28,6 +31,7 @@ const route = useRoute()
 const collapsed = ref(false)
 const mobileMenuOpen = ref(false)
 const viewport = ref(window.innerWidth)
+const themeStore = useThemeStore()
 
 const navigation: readonly NavigationItem[] = [
   { key: '/dashboard', label: '运营概览', icon: GridOutline, group: '工作台' },
@@ -110,6 +114,15 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
           <strong>{{ currentItem?.label || '内容工作台' }}</strong>
         </div>
         <div class="app-topbar__spacer" />
+        <n-button
+          quaternary
+          circle
+          :aria-label="themeStore.isDark ? '切换到亮色主题' : '切换到暗色主题'"
+          :title="themeStore.isDark ? '切换到亮色主题' : '切换到暗色主题'"
+          @click="themeStore.toggle()"
+        >
+          <template #icon><n-icon><component :is="themeStore.isDark ? SunnyOutline : MoonOutline" /></n-icon></template>
+        </n-button>
         <n-button type="primary" size="small" @click="navigate('/articles/create-wizard')">
           <template #icon><n-icon><AddOutline /></n-icon></template>
           创建文章
@@ -231,7 +244,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
   gap: 12px;
   padding: 0 24px;
   border-bottom-color: var(--aw-border) !important;
-  background: rgba(21, 27, 31, 0.9);
+  background: var(--aw-bg-topbar);
 }
 
 .app-topbar__context {
@@ -264,7 +277,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
 }
 
 .app-shell__page {
-  width: min(1440px, 100%);
+  width: min(1600px, 100%);
   min-height: 100%;
   margin: 0 auto;
   padding: 28px;

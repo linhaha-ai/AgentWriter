@@ -1,6 +1,7 @@
 package com.agentwriter.agent.impl;
 
 import com.agentwriter.agent.WriterAgent;
+import com.agentwriter.common.LlmResponseParser;
 import com.agentwriter.entity.WriterStyle;
 import com.agentwriter.service.LLMService;
 import com.agentwriter.service.PromptService;
@@ -64,6 +65,9 @@ public class DefaultWriterAgent implements WriterAgent {
 
         String response = llmService.generate(systemPrompt, userMessage);
         log.debug("WriterAgent 返回: {} 字符", response != null ? response.length() : 0);
-        return response;
+        // 模型按提示词返回 {"success":true,"data":{"content":...}} 信封，提取正文；
+        // 若模型直接输出 Markdown（非 JSON），则回退使用原始响应。
+        String content = LlmResponseParser.extractDataField(response, "content");
+        return content != null ? content : response;
     }
 }

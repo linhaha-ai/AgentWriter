@@ -197,8 +197,8 @@ const sourceMap: Record<string, string> = {
 }
 
 .topic-detail-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--aw-bg-shell);
+  border: 1px solid var(--aw-border);
 }
 
 .topic-detail-top {
@@ -249,15 +249,15 @@ const sourceMap: Record<string, string> = {
 }
 
 .topic-detail-score--muted {
-  background: rgba(158, 158, 158, 0.15);
-  color: #9e9e9e;
-  border: 1px solid rgba(158, 158, 158, 0.3);
+  background: var(--aw-bg-muted);
+  color: var(--aw-text-secondary);
+  border: 1px solid var(--aw-border);
 }
 
 .topic-detail-title {
   font-size: 24px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--aw-text-primary);
   margin: 0 0 24px 0;
   line-height: 1.4;
 }
@@ -268,9 +268,9 @@ const sourceMap: Record<string, string> = {
   gap: 12px;
   margin-bottom: 24px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--aw-bg-elevated);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--aw-border);
 }
 
 .topic-detail-info-item {
@@ -281,19 +281,19 @@ const sourceMap: Record<string, string> = {
 
 .topic-detail-info-label {
   min-width: 80px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--aw-text-secondary);
   font-size: 13px;
   flex-shrink: 0;
 }
 
 .topic-detail-info-value {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--aw-text-primary);
   font-size: 14px;
   word-break: break-all;
 }
 
 .topic-detail-info-link {
-  color: #63e2b7;
+  color: var(--aw-accent);
   text-decoration: none;
 }
 
@@ -308,7 +308,7 @@ const sourceMap: Record<string, string> = {
 
 .topic-detail-info-reason {
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--aw-text-secondary);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -317,6 +317,6 @@ const sourceMap: Record<string, string> = {
   display: flex;
   gap: 12px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--aw-border);
 }
 </style>

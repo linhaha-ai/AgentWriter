@@ -9,16 +9,18 @@ import { fetchArticle } from '../api/articles'
 import { errorMessage } from '../api/client'
 import type { Article } from '../types'
 import AppPageHeader from '../components/AppPageHeader.vue'
+import { useThemeStore } from '../stores/theme'
 import { formatDateTime } from '../utils/date'
 
 const route = useRoute()
 const router = useRouter()
+const themeStore = useThemeStore()
 const article = ref<Article | null>(null)
 const loading = ref(true)
 const loadError = ref('')
 
 const articleId = computed(() => Number(route.params.id))
-const previewTheme = computed<Themes>(() => 'dark')
+const previewTheme = computed<Themes>(() => (themeStore.isDark ? 'dark' : 'light'))
 const canPreview = computed(() => article.value?.status === 'generated')
 
 onMounted(() => {

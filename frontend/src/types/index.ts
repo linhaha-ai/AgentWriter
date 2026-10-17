@@ -238,13 +238,14 @@ export interface LlmConfig {
   credentialConfigured: boolean
 }
 
-/** 可保存的 LLM 配置，不包含环境变量中的凭据。 */
+/** 可保存的 LLM 配置；apiKey 可选：缺省=不修改已保存凭据，空字符串=清除已保存凭据，非空=覆盖 */
 export interface LlmConfigUpdate {
   enabled: boolean
   provider: 'nvidia' | 'openai' | 'agnes'
   apiUrl: string
   model: string
   timeout: number
+  apiKey?: string
 }
 
 /** 发布配置 */
@@ -258,13 +259,14 @@ export interface PublisherConfig {
   }
 }
 
-/** 可保存的发布配置，不包含环境变量中的凭据。 */
+/** 可保存的发布配置；appSecret 可选，语义同 apiKey（缺省=不变，空串=清除，非空=覆盖） */
 export interface PublisherConfigUpdate {
   wechat: {
     enabled: boolean
     appId: string
     author: string
     thumbMediaId: string
+    appSecret?: string
   }
 }
 

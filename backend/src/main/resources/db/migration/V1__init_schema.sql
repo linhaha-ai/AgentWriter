@@ -1,6 +1,6 @@
 -- ============================================================
--- AgentWriter 数据库初始化脚本（PostgreSQL + pgvector）
--- 版本: v0.1
+-- V1: AgentWriter 全量建库脚本（PostgreSQL + pgvector）
+-- 版本: v0.1（由 Flyway 管理，脚本幂等，可安全重复执行）
 -- 基于: doc/DATABASE.md + ARCHITECTURE.md §6
 -- ============================================================
 

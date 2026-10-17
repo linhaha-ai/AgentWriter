@@ -55,14 +55,18 @@
 .dashboard-agent-row {
   justify-content: space-between;
   width: 100%;
+  gap: 8px;
 }
 
 .dashboard-agent-name {
   gap: 8px;
+  min-width: 0;
 }
 
-.dashboard-agent-label,
-.dashboard-activity-row {
+.dashboard-agent-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
 }
 
@@ -81,16 +85,32 @@
   min-width: 0;
 }
 
-.dashboard-activity-message {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.dashboard-activity-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.dashboard-activity-step {
+  flex-shrink: 0;
+  font-weight: 600;
 }
 
 .dashboard-activity-time {
-  margin-top: 2px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--aw-text-muted);
   font-size: 11px;
+}
+
+.dashboard-activity-message {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--aw-text-primary);
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
 }
 
 .dashboard-column-status,

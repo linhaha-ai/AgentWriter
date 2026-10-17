@@ -26,13 +26,24 @@ abstract class OpenAiCompatibleLLMProvider {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    /**
+     * 输出 token 上限。writer/review 需输出完整长文（含代码块），4096 会截断导致
+     * JSON 信封解析失败，默认放宽到 16384。
+     */
+    private final int maxTokens;
+
     OpenAiCompatibleLLMProvider(String provider, ObjectMapper objectMapper) {
-        this(provider, objectMapper, "", 0);
+        this(provider, objectMapper, "", 0, 16384);
     }
 
     OpenAiCompatibleLLMProvider(String provider, ObjectMapper objectMapper, String proxyHost, int proxyPort) {
+        this(provider, objectMapper, proxyHost, proxyPort, 16384);
+    }
+
+    OpenAiCompatibleLLMProvider(String provider, ObjectMapper objectMapper, String proxyHost, int proxyPort, int maxTokens) {
         this.provider = provider;
         this.objectMapper = objectMapper;
+        this.maxTokens = maxTokens;
         HttpClient.Builder clientBuilder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(15))
                 .followRedirects(HttpClient.Redirect.NEVER);
@@ -97,7 +108,7 @@ abstract class OpenAiCompatibleLLMProvider {
         ObjectNode root = objectMapper.createObjectNode();
         root.put("model", model);
         root.put("temperature", 0.7);
-        root.put("max_tokens", 4096);
+        root.put("max_tokens", maxTokens);
         ArrayNode messages = root.putArray("messages");
         messages.addObject().put("role", "system").put("content", systemPrompt);
         messages.addObject().put("role", "user").put("content", userMessage);

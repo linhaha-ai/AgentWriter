@@ -277,19 +277,19 @@ const sourceMapDetail: Record<string, string> = {
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--aw-border);
 }
 
 .topics-day-label {
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--aw-text-primary);
 }
 
 .topics-day-count {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--aw-text-secondary);
+  background: var(--aw-bg-muted);
   padding: 2px 8px;
   border-radius: 10px;
 }
@@ -347,8 +347,8 @@ const sourceMapDetail: Record<string, string> = {
 }
 
 .detail-score--muted {
-  background: rgba(255, 255, 255, 0.025);
-  color: rgba(255, 255, 255, 0.4);
+  background: var(--aw-bg-muted);
+  color: var(--aw-text-secondary);
 }
 
 .detail-title {
@@ -363,9 +363,9 @@ const sourceMapDetail: Record<string, string> = {
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--aw-bg-elevated);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--aw-border);
 }
 
 .detail-info-row {
@@ -381,18 +381,18 @@ const sourceMapDetail: Record<string, string> = {
 
 .detail-info-label {
   min-width: 72px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--aw-text-secondary);
   font-size: 13px;
   flex-shrink: 0;
 }
 
 .detail-info-value {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--aw-text-primary);
   font-size: 14px;
 }
 
 .detail-info-link {
-  color: #63e2b7;
+  color: var(--aw-accent);
   text-decoration: none;
   font-size: 14px;
   word-break: break-all;
@@ -403,7 +403,7 @@ const sourceMapDetail: Record<string, string> = {
 }
 
 .detail-info-reason {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--aw-text-secondary);
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;

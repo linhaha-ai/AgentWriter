@@ -31,12 +31,16 @@ docker run -d \
 
 ### 1.2 初始化数据库
 
+> 表结构由 Flyway 统一管理，迁移脚本位于 `backend/src/main/resources/db/migration/`
+> （`V1__init_schema.sql` 为全量建库脚本，`V2`~`V6` 为增量变更）。
+> 后端启动时自动执行迁移，无需手动执行 SQL。
+
 ```bash
-# 方式一: 直接执行 SQL
-psql -U agentwriter -d agentwriter -f sql/schema.sql
+# 手动执行方式（仅调试用，正常由 Flyway 自动执行）
+psql -U agentwriter -d agentwriter -f backend/src/main/resources/db/migration/V1__init_schema.sql
 
 # 方式二: Docker 内执行
-docker exec -i agentwriter-pg psql -U agentwriter -d agentwriter < sql/schema.sql
+docker exec -i agentwriter-pg psql -U agentwriter -d agentwriter < backend/src/main/resources/db/migration/V1__init_schema.sql
 ```
 
 ---
@@ -304,7 +308,7 @@ CREATE TRIGGER trigger_knowledge_chunk_updated_at
 > 以下 SQL 可直接执行，包含所有表、索引、扩展和函数。
 
 ```sql
--- 见 sql/schema.sql
+-- 见 backend/src/main/resources/db/migration/V1__init_schema.sql（Flyway 管理）
 ```
 
 ---
@@ -401,4 +405,5 @@ LIMIT 10;
 ---
 
 > 本文档是 AgentWriter 数据库的**权威参考**。
-> 修改表结构时必须同步更新此文档和 `sql/schema.sql`。
+> 修改表结构时必须同步更新此文档，并新增 Flyway 迁移脚本到
+> `backend/src/main/resources/db/migration/`（禁止直接改已执行的迁移）。

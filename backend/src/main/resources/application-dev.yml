@@ -17,7 +17,7 @@ agentwriter:
     enabled: true
     provider: agnes
     api-url: https://apihub.agnes-ai.com/v1
-    api-key: sk-XKRhCVmxA2YUVk7OV79c7DGnDzMXvgoATy5JK7pXQWxESaWP
+    api-key: 
     model: agnes-2.5-flash
     timeout: 120
   embedding:

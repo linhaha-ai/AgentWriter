@@ -7,11 +7,14 @@ import {
   BookOutline,
   BrushOutline,
   CreateOutline,
+  CubeOutline,
   DocumentTextOutline,
   GridOutline,
+  ImageOutline,
   MenuOutline,
   MoonOutline,
   OptionsOutline,
+  SendOutline,
   SparklesOutline,
   SunnyOutline,
   TrendingUpOutline,
@@ -38,9 +41,12 @@ const navigation: readonly NavigationItem[] = [
   { key: '/articles/create-wizard', label: '创建文章', icon: CreateOutline, group: '工作台' },
   { key: '/articles', label: '文章管理', icon: DocumentTextOutline, group: '内容资产' },
   { key: '/topics', label: '热点话题', icon: TrendingUpOutline, group: '内容资产' },
+  { key: '/gallery', label: '资源图库', icon: ImageOutline, group: '内容资产' },
   { key: '/admin/templates', label: '内容模板', icon: BookOutline, group: '内容资产' },
   { key: '/admin/styles', label: '写作风格', icon: BrushOutline, group: '内容资产' },
-  { key: '/settings', label: '系统设置', icon: OptionsOutline, group: '系统' },
+  { key: '/settings/llm', label: '大模型配置', icon: SparklesOutline, group: '系统' },
+  { key: '/settings/publisher', label: '发布配置', icon: SendOutline, group: '系统' },
+  { key: '/settings/other', label: '其他配置', icon: OptionsOutline, group: '系统' },
 ]
 
 const isMobile = computed(() => viewport.value < 768)

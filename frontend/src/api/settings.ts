@@ -1,4 +1,6 @@
 import type {
+  ImageConfig,
+  ImageConfigUpdate,
   LlmConfig,
   LlmConfigUpdate,
   PublisherConfig,
@@ -35,6 +37,17 @@ export async function fetchScheduleConfig(): Promise<ScheduleConfig> {
 
 export async function saveScheduleConfig(config: ScheduleConfig): Promise<ScheduleConfig> {
   return request<ScheduleConfig>('/settings/schedule', {
+    method: 'PUT',
+    body: JSON.stringify(config),
+  })
+}
+
+export async function fetchImageConfig(): Promise<ImageConfig> {
+  return request<ImageConfig>('/settings/image')
+}
+
+export async function saveImageConfig(config: ImageConfigUpdate): Promise<ImageConfig> {
+  return request<ImageConfig>('/settings/image', {
     method: 'PUT',
     body: JSON.stringify(config),
   })

@@ -54,12 +54,14 @@ export interface ArticleImage {
 }
 
 /** 图库素材来源 */
-export type MediaAssetSource = 'GENERATED' | 'UPLOADED'
+export type MediaAssetSource = 'GENERATED' | 'UPLOADED' | 'URL'
 
 /** 图库图片分类 */
 export interface MediaCategory {
   id: number
   name: string
+  description?: string | null
+  sortOrder?: number
   assetCount: number
   createdAt: string | null
   updatedAt: string | null
@@ -68,16 +70,25 @@ export interface MediaCategory {
 /** 图库素材 */
 export interface MediaAsset {
   id: number
-  name: string
-  source: MediaAssetSource
+  name: string | null
+  url: string
   prompt: string | null
+  source: MediaAssetSource
   categoryId: number | null
   categoryName: string | null
-  contentUrl: string
-  contentType: string
-  fileSize: number
+  tags: string[]
+  width: number | null
+  height: number | null
+  fileSize: number | null
+  contentType: string | null
   createdAt: string | null
   updatedAt: string | null
+}
+
+/** 图库标签聚合 */
+export interface TagCount {
+  tag: string
+  count: number
 }
 
 /** 图库素材分页结果 */
@@ -245,6 +256,24 @@ export interface LlmConfigUpdate {
   apiUrl: string
   model: string
   timeout: number
+  apiKey?: string
+}
+
+/** 图像生成配置（OpenAI 兼容 /images/generations） */
+export interface ImageConfig {
+  enabled: boolean
+  apiUrl: string
+  model: string
+  size: string
+  credentialConfigured: boolean
+}
+
+/** 可保存的图像生成配置；apiKey 语义同 LLM（缺省=保留、空串=清除、非空=覆盖） */
+export interface ImageConfigUpdate {
+  enabled: boolean
+  apiUrl: string
+  model: string
+  size: string
   apiKey?: string
 }
 

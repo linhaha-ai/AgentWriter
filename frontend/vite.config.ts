@@ -16,6 +16,11 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // 资源图库本地图片（后端静态资源映射）
+      '/media': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 })

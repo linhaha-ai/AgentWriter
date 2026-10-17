@@ -1,6 +1,8 @@
 package com.agentwriter.controller;
 
 import com.agentwriter.common.ApiResponse;
+import com.agentwriter.dto.ImageSettingsUpdate;
+import com.agentwriter.dto.ImageSettingsView;
 import com.agentwriter.dto.LlmSettingsUpdate;
 import com.agentwriter.dto.LlmSettingsView;
 import com.agentwriter.dto.PublisherSettingsUpdate;
@@ -58,6 +60,16 @@ public class SettingsController {
     @PutMapping("/schedule")
     public ApiResponse<ScheduleSettingsView> updateScheduleConfig(@RequestBody String payload) {
         return ApiResponse.ok(settingsService.updateScheduleConfig(read(readTree(payload), ScheduleSettingsUpdate.class)));
+    }
+
+    @GetMapping("/image")
+    public ApiResponse<ImageSettingsView> getImageConfig() {
+        return ApiResponse.ok(settingsService.getImageConfig());
+    }
+
+    @PutMapping("/image")
+    public ApiResponse<ImageSettingsView> updateImageConfig(@RequestBody String payload) {
+        return ApiResponse.ok(settingsService.updateImageConfig(read(readTree(payload), ImageSettingsUpdate.class)));
     }
 
     private <T> T read(JsonNode payload, Class<T> type) {

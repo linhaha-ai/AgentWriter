@@ -41,7 +41,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleIllegalArgument(IllegalArgumentException ex) {
-        return ApiResponse.error("请求参数无效");
+        return ApiResponse.error(ex.getMessage() != null && !ex.getMessage().isBlank()
+                ? ex.getMessage() : "请求参数无效");
     }
 
     @ExceptionHandler(SystemConfigValidationException.class)

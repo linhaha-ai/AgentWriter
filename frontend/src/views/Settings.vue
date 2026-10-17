@@ -1,23 +1,41 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { errorMessage } from '../api/client'
 import {
+  fetchImageConfig,
   fetchLlmConfig,
   fetchPublisherConfig,
   fetchScheduleConfig,
+  saveImageConfig,
   saveLlmConfig,
   savePublisherConfig,
   saveScheduleConfig,
 } from '../api/settings'
-import type { LlmConfig, LlmConfigUpdate, PublisherConfig, PublisherConfigUpdate, ScheduleConfig } from '../types'
+import type { ImageConfig, ImageConfigUpdate, LlmConfig, LlmConfigUpdate, PublisherConfig, PublisherConfigUpdate, ScheduleConfig } from '../types'
+
+type SettingsSection = 'llm' | 'publisher' | 'other'
+
+const props = defineProps<{ section?: SettingsSection }>()
+const section = computed<SettingsSection>(() => props.section ?? 'llm')
+const sectionTitle = computed(() =>
+  section.value === 'llm' ? '大模型配置' : section.value === 'publisher' ? '发布配置' : '其他配置',
+)
 
 const llmConfig = ref<LlmConfig | null>(null)
 const publisherConfig = ref<PublisherConfig | null>(null)
 const scheduleConfig = ref<ScheduleConfig | null>(null)
+const imageConfig = ref<ImageConfig>({
+  enabled: false,
+  apiUrl: '',
+  model: '',
+  size: '1024x1024',
+  credentialConfigured: false,
+})
 const loading = ref(true)
 const savingLlm = ref(false)
 const savingPublisher = ref(false)
 const savingSchedule = ref(false)
+const savingImage = ref(false)
 const lastError = ref('')
 const lastSuccess = ref('')
 const compactForm = ref(false)
@@ -25,6 +43,8 @@ const llmApiKeyInput = ref('')
 const llmApiKeyCleared = ref(false)
 const wechatAppSecretInput = ref('')
 const wechatAppSecretCleared = ref(false)
+const imageApiKeyInput = ref('')
+const imageApiKeyCleared = ref(false)
 
 function updateCompactForm() {
   compactForm.value = window.innerWidth <= 768
@@ -35,14 +55,15 @@ async function loadSettings() {
   lastError.value = ''
   lastSuccess.value = ''
   try {
-    const [llm, pub, sched] = await Promise.all([
-      fetchLlmConfig(),
-      fetchPublisherConfig(),
-      fetchScheduleConfig(),
-    ])
-    llmConfig.value = llm
-    publisherConfig.value = pub
-    scheduleConfig.value = sched
+    if (section.value === 'llm') {
+      llmConfig.value = await fetchLlmConfig()
+    } else if (section.value === 'publisher') {
+      publisherConfig.value = await fetchPublisherConfig()
+    } else {
+      const [sched, image] = await Promise.all([fetchScheduleConfig(), fetchImageConfig()])
+      scheduleConfig.value = sched
+      imageConfig.value = image
+    }
   } catch (error: unknown) {
     lastError.value = errorMessage(error)
   } finally {
@@ -55,6 +76,8 @@ onMounted(() => {
   window.addEventListener('resize', updateCompactForm)
   void loadSettings()
 })
+
+watch(section, () => void loadSettings())
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateCompactForm)
@@ -89,6 +112,21 @@ function publisherUpdate(config: PublisherConfig): PublisherConfigUpdate {
     update.wechat.appSecret = ''
   } else if (wechatAppSecretInput.value.trim()) {
     update.wechat.appSecret = wechatAppSecretInput.value.trim()
+  }
+  return update
+}
+
+function imageUpdate(config: ImageConfig): ImageConfigUpdate {
+  const update: ImageConfigUpdate = {
+    enabled: config.enabled,
+    apiUrl: config.apiUrl,
+    model: config.model,
+    size: config.size,
+  }
+  if (imageApiKeyCleared.value) {
+    update.apiKey = ''
+  } else if (imageApiKeyInput.value.trim()) {
+    update.apiKey = imageApiKeyInput.value.trim()
   }
   return update
 }
@@ -142,6 +180,22 @@ async function saveSchedule() {
   }
 }
 
+async function saveImage() {
+  savingImage.value = true
+  lastError.value = ''
+  lastSuccess.value = ''
+  try {
+    imageConfig.value = await saveImageConfig(imageUpdate(imageConfig.value))
+    imageApiKeyInput.value = ''
+    imageApiKeyCleared.value = false
+    lastSuccess.value = '图像生成配置已保存'
+  } catch (error: unknown) {
+    lastError.value = errorMessage(error)
+  } finally {
+    savingImage.value = false
+  }
+}
+
 function clearLlmApiKey() {
   llmApiKeyInput.value = ''
   llmApiKeyCleared.value = true
@@ -151,11 +205,16 @@ function clearWechatAppSecret() {
   wechatAppSecretInput.value = ''
   wechatAppSecretCleared.value = true
 }
+
+function clearImageApiKey() {
+  imageApiKeyInput.value = ''
+  imageApiKeyCleared.value = true
+}
 </script>
 
 <template>
   <div class="settings-page">
-    <h2 class="settings-page-title">系统设置</h2>
+    <h2 class="settings-page-title">{{ sectionTitle }}</h2>
     <n-alert v-if="lastError" title="设置操作失败" type="error" :show-icon="true">
       {{ lastError }}
     </n-alert>
@@ -164,7 +223,8 @@ function clearWechatAppSecret() {
     </n-alert>
 
     <n-spin :show="loading">
-      <!-- LLM 配置 -->
+      <!-- 大模型配置 -->
+      <template v-if="section === 'llm'">
       <n-card title="LLM 配置" size="small" class="settings-card" :bordered="true">
         <n-form class="settings-form" :label-placement="compactForm ? 'top' : 'left'" label-width="120" size="small" v-if="llmConfig">
           <n-form-item label="启用">
@@ -223,8 +283,10 @@ function clearWechatAppSecret() {
           </n-form-item>
         </n-form>
       </n-card>
+      </template>
 
       <!-- 发布配置 -->
+      <template v-if="section === 'publisher'">
       <n-card title="发布配置" size="small" class="settings-card" :bordered="true">
         <n-form class="settings-form" :label-placement="compactForm ? 'top' : 'left'" label-width="120" size="small" v-if="publisherConfig">
           <n-form-item label="微信公众号">
@@ -272,6 +334,58 @@ function clearWechatAppSecret() {
           </n-form-item>
         </n-form>
       </n-card>
+      </template>
+
+      <!-- 其他配置：图像生成 + 定时调度 -->
+      <template v-if="section === 'other'">
+      <!-- 图像生成配置 -->
+      <n-card title="图像生成配置" size="small" class="settings-card" :bordered="true">
+        <n-form class="settings-form" :label-placement="compactForm ? 'top' : 'left'" label-width="120" size="small">
+          <n-form-item label="启用图像生成">
+            <n-switch v-model:value="imageConfig.enabled" />
+          </n-form-item>
+          <n-form-item label="API URL">
+            <n-input v-model:value="imageConfig.apiUrl" class="settings-input-wide" placeholder="https://apihub.example.com/v1" />
+          </n-form-item>
+          <n-form-item label="API Key">
+            <div class="settings-credential-state">
+              <div class="settings-credential-row">
+                <n-tag :type="imageConfig.credentialConfigured ? 'success' : 'warning'" size="small">
+                  {{ imageConfig.credentialConfigured ? '凭据已配置' : '凭据未配置' }}
+                </n-tag>
+                <n-input
+                  v-model:value="imageApiKeyInput"
+                  type="password"
+                  show-password-on="click"
+                  class="settings-input-wide"
+                  :placeholder="imageConfig.credentialConfigured ? '已保存凭据：输入新值覆盖，留空保持不变' : '请输入图像生成 API Key'"
+                />
+                <n-button
+                  v-if="imageConfig.credentialConfigured"
+                  size="small"
+                  quaternary
+                  type="error"
+                  @click="clearImageApiKey"
+                >
+                  清除已保存凭据
+                </n-button>
+              </div>
+              <span class="settings-helper-text">
+                资源图库的 AI 生成使用 OpenAI 兼容的 /images/generations 接口，请填写支持该协议的图像服务地址、Key 与模型。
+              </span>
+            </div>
+          </n-form-item>
+          <n-form-item label="模型">
+            <n-input v-model:value="imageConfig.model" class="settings-input-wide" placeholder="如 gpt-image-1 / dall-e-3 / seedream-5.0-flash" />
+          </n-form-item>
+          <n-form-item label="默认尺寸">
+            <n-input v-model:value="imageConfig.size" class="settings-input-compact" placeholder="1024x1024" />
+          </n-form-item>
+          <n-form-item>
+            <n-button type="primary" size="small" :loading="savingImage" @click="saveImage">保存配置</n-button>
+          </n-form-item>
+        </n-form>
+      </n-card>
 
       <!-- 调度配置 -->
       <n-card title="定时调度" size="small" class="settings-card" :bordered="true">
@@ -287,6 +401,7 @@ function clearWechatAppSecret() {
           </n-form-item>
         </n-form>
       </n-card>
+      </template>
     </n-spin>
   </div>
 </template>

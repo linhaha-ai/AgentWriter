@@ -56,10 +56,35 @@ const router = createRouter({
       meta: { title: '热点话题', icon: 'trending' },
     },
     {
+      path: '/gallery',
+      name: 'Gallery',
+      component: () => import('../views/Gallery.vue'),
+      meta: { title: '资源图库', icon: 'image' },
+    },
+    {
       path: '/settings',
-      name: 'Settings',
+      redirect: '/settings/llm',
+    },
+    {
+      path: '/settings/llm',
+      name: 'SettingsLlm',
       component: () => import('../views/Settings.vue'),
-      meta: { title: '系统设置', icon: 'settings' },
+      props: { section: 'llm' },
+      meta: { title: '大模型配置', icon: 'settings' },
+    },
+    {
+      path: '/settings/publisher',
+      name: 'SettingsPublisher',
+      component: () => import('../views/Settings.vue'),
+      props: { section: 'publisher' },
+      meta: { title: '发布配置', icon: 'settings' },
+    },
+    {
+      path: '/settings/other',
+      name: 'SettingsOther',
+      component: () => import('../views/Settings.vue'),
+      props: { section: 'other' },
+      meta: { title: '其他配置', icon: 'settings' },
     },
   ],
 })

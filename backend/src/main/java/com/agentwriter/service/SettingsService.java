@@ -1,5 +1,8 @@
 package com.agentwriter.service;
 
+import com.agentwriter.dto.ImageRuntimeConfig;
+import com.agentwriter.dto.ImageSettingsUpdate;
+import com.agentwriter.dto.ImageSettingsView;
 import com.agentwriter.dto.LlmRuntimeConfig;
 import com.agentwriter.dto.LlmSettingsUpdate;
 import com.agentwriter.dto.LlmSettingsView;
@@ -44,8 +47,10 @@ public class SettingsService {
     private final LlmSettingsUpdate defaultLlm;
     private final PublisherSettingsUpdate defaultPublisher;
     private final ScheduleSettingsUpdate defaultSchedule;
+    private final ImageSettingsUpdate defaultImage;
     private final String llmApiKey;
     private final String wechatAppSecret;
+    private final String imageApiKey;
     private final ApplicationEventPublisher eventPublisher;
 
     public SettingsService(
@@ -57,6 +62,11 @@ public class SettingsService {
             @Value("${agentwriter.llm.api-key:}") String llmApiKey,
             @Value("${agentwriter.llm.model:agnes-2.5-flash}") String llmModel,
             @Value("${agentwriter.llm.timeout:120}") int llmTimeout,
+            @Value("${agentwriter.image.enabled:false}") boolean imageEnabled,
+            @Value("${agentwriter.image.api-url:}") String imageApiUrl,
+            @Value("${agentwriter.image.api-key:}") String imageApiKey,
+            @Value("${agentwriter.image.model:}") String imageModel,
+            @Value("${agentwriter.image.size:1024x1024}") String imageSize,
             @Value("${agentwriter.publisher.wechat.enabled:false}") boolean wxEnabled,
             @Value("${agentwriter.publisher.wechat.app-id:}") String wxAppId,
             @Value("${agentwriter.publisher.wechat.app-secret:}") String wxAppSecret,
@@ -71,8 +81,10 @@ public class SettingsService {
         this.defaultLlm = new LlmSettingsUpdate(llmEnabled, llmProvider, llmApiUrl, llmModel, llmTimeout, null);
         this.defaultPublisher = new PublisherSettingsUpdate(new WechatSettingsUpdate(wxEnabled, wxAppId, wxAuthor, wxThumbMediaId, null));
         this.defaultSchedule = new ScheduleSettingsUpdate(schedEnabled, schedCron);
+        this.defaultImage = new ImageSettingsUpdate(imageEnabled, imageApiUrl, imageModel, imageSize, null);
         this.llmApiKey = llmApiKey;
         this.wechatAppSecret = wxAppSecret;
+        this.imageApiKey = imageApiKey;
         this.eventPublisher = eventPublisher;
     }
 
@@ -164,6 +176,39 @@ public class SettingsService {
         return new ScheduleRuntimeConfig(config.enabled(), config.cron());
     }
 
+    public ImageSettingsView getImageConfig() {
+        ImageSettingsUpdate config = readConfig("image", ImageSettingsUpdate.class, defaultImage);
+        validateImage(config, true);
+        return toImageView(config);
+    }
+
+    public ImageSettingsView updateImageConfig(ImageSettingsUpdate config) {
+        validateImage(config, false);
+        ImageSettingsUpdate stored = readConfig("image", ImageSettingsUpdate.class, defaultImage);
+        ImageSettingsUpdate toSave = new ImageSettingsUpdate(
+                config.enabled(), config.apiUrl(), config.model(), config.size(),
+                resolveSecretOnUpdate(config.apiKey(), stored.apiKey())
+        );
+        saveConfig("image", toSave);
+        return toImageView(toSave);
+    }
+
+    public ImageRuntimeConfig getImageRuntimeConfig() {
+        ImageSettingsUpdate config = readConfig("image", ImageSettingsUpdate.class, defaultImage);
+        validateImage(config, true);
+        return new ImageRuntimeConfig(
+                config.enabled(), config.apiUrl(), config.model(),
+                hasText(config.size()) ? config.size() : "1024x1024");
+    }
+
+    /**
+     * 返回图像生成 API Key：优先界面保存的凭据，其次 yml/环境变量中的 agentwriter.image.api-key。
+     */
+    public String getImageApiKey() {
+        ImageSettingsUpdate stored = readConfig("image", ImageSettingsUpdate.class, defaultImage);
+        return hasText(stored.apiKey()) ? stored.apiKey() : imageApiKey;
+    }
+
     private LlmSettingsView toLlmView(LlmSettingsUpdate config) {
         return new LlmSettingsView(
                 config.enabled(), config.provider(), config.apiUrl(), config.model(), effectiveLlmTimeout(config.timeout()),
@@ -176,6 +221,18 @@ public class SettingsService {
                 wechat.enabled(), wechat.appId(), wechat.author(), wechat.thumbMediaId(),
                 hasText(effectiveWechatAppSecret(wechat.appSecret()))
         ));
+    }
+
+    private ScheduleSettingsView toScheduleView(ScheduleSettingsUpdate config) {
+        return new ScheduleSettingsView(config.enabled(), config.cron());
+    }
+
+    private ImageSettingsView toImageView(ImageSettingsUpdate config) {
+        return new ImageSettingsView(
+                config.enabled(), config.apiUrl(), config.model(),
+                hasText(config.size()) ? config.size() : "1024x1024",
+                hasText(config.apiKey())
+        );
     }
 
     private PublisherSettingsView toPublisherView(PublisherSettingsUpdate config) {
@@ -239,6 +296,25 @@ public class SettingsService {
     private void validateSchedule(ScheduleSettingsUpdate config, boolean stored) {
         if (config == null || !hasText(config.cron()) || !CronExpression.isValidExpression(config.cron())) {
             invalid(stored, "调度 cron 表达式无效");
+        }
+    }
+
+    private void validateImage(ImageSettingsUpdate config, boolean stored) {
+        if (config == null) {
+            invalid(stored, "必须提供图像生成配置");
+        }
+        if (config.enabled()) {
+            if (!hasText(config.apiUrl())) {
+                invalid(stored, "启用图像生成时 API URL 不能为空");
+            }
+            if (!isHttpUrl(config.apiUrl())) {
+                invalid(stored, "启用图像生成时 API URL 必须是绝对 http 或 https 地址");
+            }
+            if (!hasText(config.model())) {
+                invalid(stored, "启用图像生成时模型不能为空");
+            }
+        } else if (hasText(config.apiUrl()) && !isHttpUrl(config.apiUrl())) {
+            invalid(stored, "提供图像生成 API URL 时必须使用绝对 http 或 https 地址");
         }
     }
 

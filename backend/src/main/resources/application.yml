@@ -75,6 +75,11 @@ agentwriter:
     timeout: 30
   image:
     enabled: false
+    provider: openai
+    api-url:
+    api-key:
+    model:
+    size: 1024x1024
     comfy-base-url: http://localhost:8188
     workflow-template:
     storage-directory: data/generated-images

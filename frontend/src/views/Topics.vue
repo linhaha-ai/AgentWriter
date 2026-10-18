@@ -133,6 +133,17 @@ const sourceMap: Record<string, string> = {
   manual: '手动',
 }
 
+// 来源标签配色：github 蓝 / rss 橙 / openhot 红 / manual 灰
+const sourceTagTypes: Record<string, 'info' | 'success' | 'warning' | 'error' | 'default'> = {
+  github: 'info',
+  rss: 'warning',
+  openhot: 'error',
+  manual: 'default',
+}
+function sourceTagType(source: string) {
+  return sourceTagTypes[source] || 'default'
+}
+
 const sourceMapDetail: Record<string, string> = {
   github: 'GitHub Trending',
   rss: 'RSS 订阅',
@@ -185,7 +196,7 @@ const sourceMapDetail: Record<string, string> = {
               <div class="topic-content">
                 <div class="topic-title topic-title--clickable" @click="openDetail(topic)">{{ topic.title.replace('如何', '如\u2060何') }}</div>
                 <div class="topic-meta">
-                  <n-tag size="tiny" type="info">{{ sourceMap[topic.source] }}</n-tag>
+                  <n-tag size="tiny" :type="sourceTagType(topic.source)" round>{{ sourceMap[topic.source] }}</n-tag>
                   <span class="topic-created-at">{{ formatDateTime(topic.createdAt) }}</span>
                 </div>
               </div>

@@ -44,7 +44,7 @@ public class TopicService {
         }
 
         try {
-            JsonNode root = objectMapper.readTree(json);
+            JsonNode root = objectMapper.readTree(extractJson(json));
             List<JsonNode> items = extractTopicItems(root);
 
             if (items.isEmpty()) {
@@ -81,6 +81,35 @@ public class TopicService {
             log.error("解析话题采集结果失败: {}", e.getMessage(), e);
             return List.of();
         }
+    }
+
+    /**
+     * 清洗 LLM / 抓取返回的原始文本，提取其中的 JSON 主体。
+     * 兼容 Markdown 代码块围栏（```json ... ```）与前后杂质文本。
+     */
+    private String extractJson(String raw) {
+        if (raw == null) return "";
+        String text = raw.trim();
+        if (text.isEmpty()) return text;
+
+        // 1) 剥离 Markdown 代码块围栏：```json ... ``` / ``` ... ```
+        int fenceStart = text.indexOf("```");
+        if (fenceStart >= 0) {
+            int bodyStart = text.indexOf('\n', fenceStart);
+            if (bodyStart < 0) bodyStart = fenceStart + 3;
+            int fenceEnd = text.lastIndexOf("```");
+            if (fenceEnd > bodyStart) {
+                text = text.substring(bodyStart + 1, fenceEnd).trim();
+            }
+        }
+
+        // 2) 取第一个 { 到最后一个 } 之间的内容，丢弃前后说明文字
+        int firstBrace = text.indexOf('{');
+        int lastBrace = text.lastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace) {
+            text = text.substring(firstBrace, lastBrace + 1);
+        }
+        return text;
     }
 
     /**
@@ -126,16 +155,34 @@ public class TopicService {
         return TopicResponse.from(topic);
     }
 
+    /**
+     * 查询全部话题，按热度降序排列；热度相同时按创建时间倒序（新话题优先）。
+     */
     public List<TopicResponse> findAll() {
         return topicRepository.findAll().stream()
+                .sorted(topicComparator())
                 .map(TopicResponse::from)
                 .toList();
     }
 
+    /**
+     * 按状态查询话题，同样按热度降序 + 创建时间倒序排列。
+     */
     public List<TopicResponse> findByStatus(String status) {
         return topicRepository.findByStatus(status).stream()
+                .sorted(topicComparator())
                 .map(TopicResponse::from)
                 .toList();
+    }
+
+    /**
+     * 话题排序比较器：热度（score）降序为主，热度相同按创建时间倒序（最新在前）。
+     */
+    private static java.util.Comparator<Topic> topicComparator() {
+        return java.util.Comparator
+                .comparingInt((Topic t) -> t.getScore() == null ? 0 : t.getScore())
+                .reversed()
+                .thenComparing(Topic::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()));
     }
 
     public TopicResponse selectTopic(Long id) {

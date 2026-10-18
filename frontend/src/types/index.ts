@@ -114,6 +114,8 @@ export interface GenerationLog {
   step: string
   status: 'pending' | 'running' | 'success' | 'succeeded' | 'failed'
   message: string
+  /** 该阶段完成后的实际产出内容（调研摘要 / 大纲 / 正文等） */
+  output?: string | null
   createdAt: string | null
 }
 

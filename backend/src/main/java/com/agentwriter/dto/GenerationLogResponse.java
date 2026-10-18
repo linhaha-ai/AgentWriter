@@ -6,13 +6,14 @@ import com.agentwriter.entity.ExecutionLog;
 import java.time.LocalDateTime;
 
 /**
- * 面向前端的生成阶段日志，不包含智能体输入、输出或异常原文。
+ * 面向前端的生成阶段日志。包含该阶段的实际产出内容（output），用于生成过程中逐环节展示。
  */
 public record GenerationLogResponse(
         Long id,
         String step,
         String status,
         String message,
+        String output,
         LocalDateTime createdAt
 ) {
     public static GenerationLogResponse from(ExecutionLog log) {
@@ -21,6 +22,7 @@ public record GenerationLogResponse(
                 log.getStep(),
                 log.getStatus(),
                 messageFor(log),
+                log.getOutput(),
                 log.getCreatedAt()
         );
     }

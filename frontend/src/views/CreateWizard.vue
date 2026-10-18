@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { MdPreview } from 'md-editor-v3'
+import type { Themes } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
+import { useThemeStore } from '../stores/theme'
 import type { ArticleStatus, ArticleTemplate, GenerationEvent, GenerationLog, GenerationProgress, ProgressResponse, Topic, WriterStyle } from '../types'
 import { fetchEnabledTemplates, fetchEnabledStyles, stepGenerate, subscribeGenerationEvents } from '../api/articles'
 import { errorMessage } from '../api/client'
 import { fetchTopics } from '../api/topics'
-import { formatDateTime } from '../utils/date'
 import SelectableCard from '../components/SelectableCard.vue'
 import {
   NAlert,
@@ -20,13 +23,15 @@ import {
   NStep,
   NSteps,
   NTag,
-  NTimeline,
-  NTimelineItem,
   useMessage,
 } from 'naive-ui'
 
 const router = useRouter()
 const message = useMessage()
+const themeStore = useThemeStore()
+
+// Markdown 预览跟随亮/暗主题
+const previewTheme = computed<Themes>(() => (themeStore.isDark ? 'dark' : 'light'))
 
 const currentStep = ref(0)
 const topicsLoading = ref(false)
@@ -54,6 +59,40 @@ const styles = ref<WriterStyle[]>([])
 const selectedTopicCount = computed(() => formData.value.topicIds.length)
 const isGenerating = computed(() => generationArticleId.value !== null)
 const generationPercent = computed(() => generationProgress.value?.progress ?? 0)
+
+// 已选话题对象列表（供已选区域展示与取消）
+const selectedTopics = computed(() =>
+  topics.value.filter(topic => formData.value.topicIds.includes(topic.id)),
+)
+
+// 话题来源：中文文案 + 标签配色（github 蓝 / rss 橙 / openhot 红 / manual 灰）
+const sourceMap: Record<string, string> = {
+  github: 'GitHub',
+  rss: 'RSS',
+  openhot: 'OpenHot',
+  manual: '手动',
+}
+const sourceTagTypes: Record<string, 'info' | 'success' | 'warning' | 'error' | 'default'> = {
+  github: 'info',
+  rss: 'warning',
+  openhot: 'error',
+  manual: 'default',
+}
+function sourceLabel(source: string): string {
+  return sourceMap[source] || source
+}
+function sourceTagType(source: string) {
+  return sourceTagTypes[source] || 'default'
+}
+
+// 话题热度分级：≥90 高 / ≥80 中高 / ≥70 中 / 其余偏低
+function scoreClass(score: number | null): string {
+  const s = score ?? 0
+  if (s >= 90) return 'topic-score--high'
+  if (s >= 80) return 'topic-score--medium'
+  if (s >= 70) return 'topic-score--low'
+  return 'topic-score--muted'
+}
 
 const workflowSteps = [
   { key: 'research', label: '深度调研' },
@@ -217,8 +256,32 @@ function stepStatusType(status: ReturnType<typeof workflowStepStatus>) {
   return ({ pending: 'default', running: 'info', success: 'success', failed: 'error' } as const)[status]
 }
 
-function logStatusType(status: GenerationLog['status']) {
-  return ({ pending: 'default', running: 'info', success: 'success', succeeded: 'success', failed: 'error' } as const)[status]
+// 各环节产出：按 step 聚合最新日志，供"环节产出"卡片展示
+const logsByStep = computed(() => {
+  const map = new Map<string, GenerationLog>()
+  for (const log of generationLogs.value) {
+    map.set(log.step, log)
+  }
+  return map
+})
+
+/**
+ * 取某环节完成后的实际产出内容；只有成功状态且有内容时才展示。
+ */
+function outputOf(step: string): string | null {
+  const log = logsByStep.value.get(step)
+  const done = log?.status === 'success' || log?.status === 'succeeded'
+  const output = log?.output?.trim()
+  return done && output ? output : null
+}
+
+/** 环节卡片状态类：已完成高亮边框，进行中带脉冲，失败红边 */
+function outputCardClass(step: string): string {
+  const status = workflowStepStatus(workflowSteps.findIndex(item => item.key === step))
+  if (status === 'success') return 'output-card--done'
+  if (status === 'running') return 'output-card--running'
+  if (status === 'failed') return 'output-card--failed'
+  return ''
 }
 </script>
 
@@ -288,11 +351,27 @@ function logStatusType(status: GenerationLog['status']) {
             >
               <template #title>{{ topic.title }}</template>
               <div class="topic-meta">
-                <NTag size="small">{{ topic.source }}</NTag>
-                <span>热度 {{ topic.score }}</span>
+                <NTag size="small" :type="sourceTagType(topic.source)" round>{{ sourceLabel(topic.source) }}</NTag>
+                <span class="topic-score-badge" :class="scoreClass(topic.score)">热度 {{ topic.score }}</span>
               </div>
               <p v-if="topic.reason" class="card-description">{{ topic.reason }}</p>
             </SelectableCard>
+          </div>
+
+          <!-- 已选话题：话题列表下方展示，可点击取消 -->
+          <div v-if="selectedTopics.length > 0" class="selected-topics-panel">
+            <div class="selected-topics-title">已选话题（{{ selectedTopics.length }}）</div>
+            <div class="selected-topics-list">
+              <NTag
+                v-for="topic in selectedTopics"
+                :key="topic.id"
+                size="small"
+                closable
+                @close="toggleTopic(topic.id)"
+              >
+                {{ topic.title }}
+              </NTag>
+            </div>
           </div>
         </NSpin>
       </div>
@@ -316,6 +395,19 @@ function logStatusType(status: GenerationLog['status']) {
             />
           </NFormItem>
         </NForm>
+
+        <!-- 已选话题摘要：填写标题时可回顾已选话题 -->
+        <div v-if="selectedTopics.length > 0" class="selected-topics-summary">
+          <span class="selected-topics-summary-label">已选话题：</span>
+          <NTag
+            v-for="topic in selectedTopics"
+            :key="topic.id"
+            size="small"
+            round
+          >
+            {{ topic.title }}
+          </NTag>
+        </div>
       </div>
 
       <!-- 步骤 2：选择模板 -->
@@ -430,23 +522,45 @@ function logStatusType(status: GenerationLog['status']) {
         </li>
       </ol>
 
-      <section class="generation-logs" aria-label="生成日志">
-        <div class="generation-logs__heading">
-          <div><p class="create-wizard__eyebrow">执行日志</p><h2>阶段执行记录</h2></div>
+      <section class="generation-outputs" aria-label="环节产出">
+        <div class="generation-outputs__heading">
+          <div><p class="create-wizard__eyebrow">环节产出</p><h2>各环节生成内容</h2></div>
           <span>{{ connectionState === 'connected' ? '实时连接已建立' : '等待连接' }}</span>
         </div>
         <NEmpty v-if="generationLogs.length === 0" description="正在等待第一个阶段开始" size="small" />
-        <NTimeline v-else>
-          <NTimelineItem
-            v-for="log in generationLogs"
-            :key="log.id"
-            :type="logStatusType(log.status)"
-            :title="workflowSteps.find(step => step.key === log.step)?.label || log.step"
-            :time="formatDateTime(log.createdAt)"
+
+        <ol v-else class="output-cards">
+          <li
+            v-for="(step, index) in workflowSteps"
+            :key="step.key"
+            class="output-card"
+            :class="outputCardClass(step.key)"
           >
-            {{ log.message }}
-          </NTimelineItem>
-        </NTimeline>
+            <div class="output-card__head">
+              <span class="output-card__badge">{{ index + 1 }}</span>
+              <strong>{{ step.label }}</strong>
+              <NTag size="small" :type="stepStatusType(workflowStepStatus(index))">
+                {{ stepStatusLabel(workflowStepStatus(index)) }}
+              </NTag>
+            </div>
+
+            <div v-if="outputOf(step.key)" class="output-card__body">
+              <!-- 调研：纯文本摘要；其余环节：Markdown 渲染 -->
+              <pre v-if="step.key === 'research'" class="output-card__text">{{ outputOf(step.key) }}</pre>
+              <MdPreview
+                v-else
+                :modelValue="outputOf(step.key)"
+                :theme="previewTheme"
+                language="zh-CN"
+                class="output-card__md"
+              />
+            </div>
+            <p v-else-if="workflowStepStatus(index) === 'running'" class="output-card__hint output-card__hint--running">
+              正在生成中…
+            </p>
+            <p v-else class="output-card__hint">等待执行</p>
+          </li>
+        </ol>
       </section>
 
       <div class="generation-panel__actions">
@@ -543,7 +657,7 @@ function logStatusType(status: GenerationLog['status']) {
 }
 
 .selection-grid--topics {
-  max-height: 380px;
+  max-height: min(600px, 66vh);
   overflow-y: auto;
   padding: 2px 6px 2px 2px;
   scrollbar-gutter: stable;
@@ -560,6 +674,59 @@ function logStatusType(status: GenerationLog['status']) {
   gap: 10px;
   color: var(--aw-color-text-secondary);
   font-size: 12px;
+}
+
+/* 热度分级徽章：胶囊底色 + 白字，区分度更高 */
+.topic-score-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.8;
+  color: #fff;
+}
+
+.topic-score--high { background: #e64a4a; }
+.topic-score--medium { background: #f08a2e; }
+.topic-score--low { background: #4a7de0; }
+.topic-score--muted { background: #9aa4b2; }
+
+/* 已选话题面板（话题列表下方） */
+.selected-topics-panel {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--aw-color-bg-secondary, rgba(0, 0, 0, 0.03));
+  border: 1px dashed var(--aw-color-border, rgba(0, 0, 0, 0.12));
+}
+
+.selected-topics-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--aw-text-primary, #1a1a1a);
+  margin-bottom: 8px;
+}
+
+.selected-topics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 已选话题摘要（基本信息步骤） */
+.selected-topics-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.selected-topics-summary-label {
+  font-size: 13px;
+  color: var(--aw-color-text-secondary);
 }
 
 .card-description,
@@ -610,6 +777,132 @@ function logStatusType(status: GenerationLog['status']) {
   border: 1px solid var(--aw-border);
   border-radius: 6px;
   background: var(--aw-bg-elevated);
+}
+
+/* 环节产出卡片流 */
+.generation-outputs {
+  padding: 18px;
+  border: 1px solid var(--aw-border);
+  border-radius: 6px;
+  background: var(--aw-bg-elevated);
+}
+
+.generation-outputs__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.generation-outputs__heading h2 {
+  margin: 0;
+  color: var(--aw-text-primary);
+  font-size: 14px;
+}
+
+.generation-outputs__heading > span {
+  color: var(--aw-text-secondary);
+  font-size: 12px;
+}
+
+.output-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.output-card {
+  border: 1px solid var(--aw-border);
+  border-radius: 8px;
+  background: var(--aw-bg-shell);
+  overflow: hidden;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.output-card--done {
+  border-color: color-mix(in srgb, var(--aw-success, #18a058) 45%, var(--aw-border));
+}
+
+.output-card--running {
+  border-color: color-mix(in srgb, var(--aw-info, #2080f0) 55%, var(--aw-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--aw-info, #2080f0) 12%, transparent);
+}
+
+.output-card--failed {
+  border-color: color-mix(in srgb, var(--aw-danger, #d03050) 55%, var(--aw-border));
+}
+
+.output-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--aw-border);
+  background: var(--aw-bg-muted);
+}
+
+.output-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--aw-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.output-card__head strong {
+  color: var(--aw-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.output-card__body {
+  padding: 12px 14px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.output-card__text {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--aw-bg-muted);
+  color: var(--aw-text-secondary);
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.output-card__md {
+  font-size: 13px;
+}
+
+.output-card__hint {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--aw-text-secondary);
+  font-size: 13px;
+}
+
+.output-card__hint--running {
+  color: var(--aw-info);
+  animation: output-card-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes output-card-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
 
 .generation-progress__heading,
@@ -680,7 +973,7 @@ function logStatusType(status: GenerationLog['status']) {
   .generation-steps { grid-template-columns: 1fr; }
 
   .selection-grid--topics {
-    max-height: 300px;
+    max-height: min(440px, 56vh);
   }
 
   .state-panel {

@@ -1,5 +1,6 @@
 package com.agentwriter.service;
 
+import com.agentwriter.common.MarkdownCollapseExpander;
 import com.agentwriter.common.MarkdownHeadingNumberer;
 import com.agentwriter.dto.ArticleCreateRequest;
 import com.agentwriter.dto.ArticleResponse;
@@ -72,7 +73,8 @@ public class ArticleService {
     public ArticleResponse updateContent(Long id, String contentMd, String contentHtml) {
         var article = articleRepository.findById(id)
                 .orElseThrow(() -> new ArticleNotFoundException(id));
-        article.setContentMd(contentMd);
+        // 编辑保存同样展开折叠块，保证代码块默认全部展开
+        article.setContentMd(MarkdownCollapseExpander.expand(contentMd));
         if (contentHtml != null) {
             article.setContentHtml(contentHtml);
         }
@@ -87,7 +89,7 @@ public class ArticleService {
             article.setTitle((String) updates.get("title"));
         }
         if (updates.containsKey("contentMd")) {
-            article.setContentMd((String) updates.get("contentMd"));
+            article.setContentMd(MarkdownCollapseExpander.expand((String) updates.get("contentMd")));
         }
         if (updates.containsKey("coverImage")) {
             article.setCoverImage((String) updates.get("coverImage"));
@@ -105,7 +107,8 @@ public class ArticleService {
     }
 
     public ArticleResponse completeGeneration(Long id, String contentMd) {
-        String normalized = MarkdownHeadingNumberer.numberize(contentMd);
+        // 生成完成统一规范化：标题编号 + 展开折叠块（保证代码块默认全部展开）
+        String normalized = MarkdownCollapseExpander.expand(MarkdownHeadingNumberer.numberize(contentMd));
         int updated = articleRepository.completeGenerationWithContent(
                 id,
                 ArticleStatus.GENERATING.databaseValue(),

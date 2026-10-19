@@ -4,12 +4,14 @@ import com.agentwriter.common.MarkdownCollapseExpander;
 import com.agentwriter.common.MarkdownHeadingNumberer;
 import com.agentwriter.dto.ArticleCreateRequest;
 import com.agentwriter.dto.ArticleResponse;
+import com.agentwriter.dto.GenerationLogDetail;
 import com.agentwriter.entity.Article;
 import com.agentwriter.entity.ArticleStatus;
 import com.agentwriter.exception.ArticleNotFoundException;
 import com.agentwriter.exception.ArticleTransitionConflictException;
 import com.agentwriter.exception.DuplicateArticleException;
 import com.agentwriter.repository.ArticleRepository;
+import com.agentwriter.repository.ExecutionLogRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,9 +21,22 @@ import java.util.Map;
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
+    private final ExecutionLogRepository executionLogRepository;
 
-    public ArticleService(ArticleRepository articleRepository) {
+    public ArticleService(ArticleRepository articleRepository, ExecutionLogRepository executionLogRepository) {
         this.articleRepository = articleRepository;
+        this.executionLogRepository = executionLogRepository;
+    }
+
+    /**
+     * 查询文章的生成环节日志详情：每个环节的输入（做了什么）、产出（输出）、状态与耗时。
+     */
+    public List<GenerationLogDetail> findGenerationLogs(Long id) {
+        // 文章不存在时抛出 404
+        findById(id);
+        return executionLogRepository.findByArticleIdOrderByCreatedAtAsc(id).stream()
+                .map(GenerationLogDetail::from)
+                .toList();
     }
 
     public ArticleResponse create(ArticleCreateRequest request) {

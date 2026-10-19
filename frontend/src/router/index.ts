@@ -32,6 +32,12 @@ const router = createRouter({
       meta: { title: '文章预览', hidden: true },
     },
     {
+      path: '/articles/:id/logs',
+      name: 'ArticleLogs',
+      component: () => import('../views/ArticleLogs.vue'),
+      meta: { title: '生成日志', hidden: true },
+    },
+    {
       path: '/articles/create-wizard',
       name: 'CreateWizard',
       component: () => import('../views/CreateWizard.vue'),

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowBackOutline, CreateOutline } from '@vicons/ionicons5'
+import { ArrowBackOutline, CreateOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import { MdPreview } from 'md-editor-v3'
 import type { Themes } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
@@ -50,6 +50,10 @@ async function loadArticle() {
         <n-button secondary @click="router.push('/articles')">
           <template #icon><n-icon><ArrowBackOutline /></n-icon></template>
           返回列表
+        </n-button>
+        <n-button v-if="article" secondary @click="router.push(`/articles/${article.id}/logs`)">
+          <template #icon><n-icon><DocumentTextOutline /></n-icon></template>
+          生成日志
         </n-button>
         <n-button v-if="article" type="primary" @click="router.push(`/articles/${article.id}/edit`)">
           <template #icon><n-icon><CreateOutline /></n-icon></template>

@@ -172,6 +172,19 @@ export interface GenerationEvent {
   log: GenerationLog | null
 }
 
+/** 生成环节日志详情：每个环节做了什么（输入）、产出什么（输出）与耗时。 */
+export interface GenerationLogDetail {
+  id: number
+  step: string
+  agentName: string | null
+  status: string
+  input: string | null
+  output: string | null
+  errorMsg: string | null
+  elapsedMs: number | null
+  createdAt: string | null
+}
+
 /** 后台模板创建/更新请求 */
 export interface AdminTemplateRequest {
   name: string

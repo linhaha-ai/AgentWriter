@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import {
   AddOutline,
   CreateOutline,
+  DocumentTextOutline,
   EyeOutline,
   RefreshOutline,
   SendOutline,
@@ -183,6 +184,10 @@ onUnmounted(() => {
                   <n-button v-if="article.status === 'generated'" size="small" quaternary @click="router.push(`/articles/${article.id}/preview`)">
                     <template #icon><n-icon><EyeOutline /></n-icon></template>
                     预览
+                  </n-button>
+                  <n-button size="small" quaternary @click="router.push(`/articles/${article.id}/logs`)">
+                    <template #icon><n-icon><DocumentTextOutline /></n-icon></template>
+                    日志
                   </n-button>
                   <n-button
                     v-if="article.status === 'generated'"

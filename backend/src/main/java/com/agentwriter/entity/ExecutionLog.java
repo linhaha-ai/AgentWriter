@@ -52,6 +52,10 @@ public class ExecutionLog {
     @Column(name = "error_msg", columnDefinition = "TEXT")
     private String errorMsg;
 
+    /** 步骤执行耗时（毫秒），供生成日志页面展示 */
+    @Column(name = "elapsed_ms")
+    private Long elapsedMs;
+
     @Column(name = "article_id")
     private Long articleId;
 

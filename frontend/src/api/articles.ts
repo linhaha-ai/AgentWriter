@@ -1,4 +1,4 @@
-import type { Article, ArticleImage, ArticleImageRole, ArticleTemplate, GenerationEvent, ImageSuggestion, ProgressResponse, PublishResult, StepGenerateRequest, StepGenerateResult, WriterStyle } from '../types'
+import type { Article, ArticleImage, ArticleImageRole, ArticleTemplate, GenerationEvent, GenerationLogDetail, ImageSuggestion, ProgressResponse, PublishResult, StepGenerateRequest, StepGenerateResult, WriterStyle } from '../types'
 import { request } from './client'
 
 export type ArticleQuery = {
@@ -36,6 +36,11 @@ export async function fetchArticles(params?: ArticleQuery): Promise<Article[]> {
 
 export async function fetchArticle(id: number): Promise<Article> {
   return request<Article>(`/articles/${id}`)
+}
+
+/** 查询文章的生成环节日志详情（每个环节的输入、产出、状态与耗时）。 */
+export async function fetchGenerationLogs(id: number): Promise<GenerationLogDetail[]> {
+  return request<GenerationLogDetail[]>(`/articles/${id}/logs`)
 }
 
 export async function generateArticle(topicId: number): Promise<Article> {

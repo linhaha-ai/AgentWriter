@@ -5,6 +5,7 @@ import com.agentwriter.dto.ArticleCreateRequest;
 import com.agentwriter.dto.ArticleImageGenerateRequest;
 import com.agentwriter.dto.ArticleImageResponse;
 import com.agentwriter.dto.ArticleResponse;
+import com.agentwriter.dto.GenerationLogDetail;
 import com.agentwriter.dto.ImageSuggestion;
 import com.agentwriter.dto.ProgressResponse;
 import com.agentwriter.dto.PublishResult;
@@ -83,6 +84,11 @@ public class ArticleController {
     @GetMapping("/{id}")
     public ApiResponse<ArticleResponse> findById(@PathVariable Long id) {
         return ApiResponse.ok(articleService.findById(id));
+    }
+
+    @GetMapping("/{id}/logs")
+    public ApiResponse<List<GenerationLogDetail>> findGenerationLogs(@PathVariable Long id) {
+        return ApiResponse.ok(articleService.findGenerationLogs(id));
     }
 
     @GetMapping

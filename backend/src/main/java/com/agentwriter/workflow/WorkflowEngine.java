@@ -141,13 +141,19 @@ public class WorkflowEngine {
     private ArticleResponse executeWorkflow(Article article, WorkflowRequest request) {
         var context = new WorkflowContext(article, request);
         int total = steps.size();
+        // 上一步产出作为下一步的输入，串起完整环节链路
+        String previousOutput = "文章标题: " + request.title();
 
         for (int i = 0; i < total; i++) {
             var step = steps.get(i);
             int stepIndex = i;
             var logEntry = createLog(article.getId(), step.name());
+            long stepStartedAt = System.currentTimeMillis();
 
             try {
+                // 记录本环节的输入（上一步产出），供日志页面展示"每个环节做了什么"
+                logEntry.setInput(previousOutput);
+
                 // 更新进度：步骤运行中
                 updateProgress(article.getId(), GenerationProgress.running(STEP_NAMES.get(i), i, total));
 
@@ -166,14 +172,20 @@ public class WorkflowEngine {
 
                 logEntry.setStatus("success");
                 logEntry.setOutput(context.getCurrentOutput());
+                logEntry.setElapsedMs(System.currentTimeMillis() - stepStartedAt);
                 saveGenerationLog(article.getId(), logEntry, "generating", GenerationProgress.completed(
                         STEP_NAMES.get(i), i, total));
                 log.info("步骤 {} 完成: articleId={}", step.name(), article.getId());
 
+                // 当前产出作为下一步的输入
+                previousOutput = context.getCurrentOutput();
+
             } catch (Exception e) {
                 ErrorCategory category = ErrorCategory.classify(e);
                 logEntry.setStatus("failed");
+                logEntry.setInput(previousOutput);
                 logEntry.setErrorMsg("[%s] %s".formatted(category, e.getMessage()));
+                logEntry.setElapsedMs(System.currentTimeMillis() - stepStartedAt);
                 saveGenerationLog(article.getId(), logEntry, "generating", GenerationProgress.failed(
                         STEP_NAMES.get(i), i));
 

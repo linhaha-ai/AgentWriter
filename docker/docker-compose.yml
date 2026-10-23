@@ -1,33 +1,91 @@
-version: "3.8"
+# AgentWriter 全栈一键启动：PostgreSQL + 后端 + 前端
+#
+# 用法（仓库根目录）：
+#   docker compose -f docker/docker-compose.yml up -d --build
+# 等价于：cd docker && docker compose up -d --build
+#
+# 端口/账号/代理等可覆盖项见 docker/.env.example（复制为 docker/.env 后修改生效）。
+# 本项目与手动启动的开发库容器（宿主 5433、卷 agentwriter-pgdata）完全隔离：
+# 项目名固定为 agentwriter，卷/网络/容器名由 compose 自动加前缀，互不影响。
+
+name: agentwriter
 
 services:
   postgres:
-    image: ankane/pgvector:latest
-    container_name: agentwriter-postgres
-    hostname: agentwriter-postgres
+    # 与本机已验证可运行的开发库镜像保持一致（PostgreSQL 16 + pgvector 扩展）
+    image: pgvector/pgvector:0.8.6-pg16-bookworm
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: agentwriter
-      POSTGRES_USER: agentwriter
-      POSTGRES_PASSWORD: agentwriter_secret
+      POSTGRES_DB: ${POSTGRES_DB:-agentwriter}
+      POSTGRES_USER: ${POSTGRES_USER:-agentwriter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentwriter_secret}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - agentwriter-net
+      # 空库首次初始化时执行（创建 pgvector 扩展，迁移 V1 的 VECTOR 列依赖它）
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agentwriter"]
+      # $$ 为 compose 转义，实际由容器内 shell 读取容器环境变量
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
 
-volumes:
-  pgdata:
-    name: agentwriter-pgdata
+  backend:
+    build:
+      context: .. # 构建需要根 pom 与 backend 模块，上下文为仓库根（裁剪见根 .dockerignore）
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # dev 档提供 LLM 密钥等本机配置；docker 档覆盖数据库连接/代理/存储路径
+      SPRING_PROFILES_ACTIVE: dev,docker
+      # 数据库连接以环境变量兜底（优先级高于任何配置文件）
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-agentwriter}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-agentwriter}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-agentwriter_secret}
+      # schema 完全由 Flyway 管理：禁止 Hibernate 抢先建表（环境变量优先级最高，
+      # 确保无论 profile 加载顺序如何都生效，避免幂等迁移脚本因表已存在被跳过）
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    # 以命令行参数覆盖外网代理（Spring 最高优先级，确保不被 dev 档的 127.0.0.1 影响）。
+    # 默认直连；需代理时在 docker/.env 中设置 TOPIC_PROXY_HOST/TOPIC_PROXY_PORT
+    command:
+      - --agentwriter.topic.proxy-host=${TOPIC_PROXY_HOST:-}
+      - --agentwriter.topic.proxy-port=${TOPIC_PROXY_PORT:-0}
+    volumes:
+      - backend-data:/app/data # 生成图片等运行时数据持久化
+    healthcheck:
+      # 后端未启用 actuator，以 TCP 端口探测就绪（端口在启动末期才打开）
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
 
-networks:
-  agentwriter-net:
-    name: agentwriter-net
-    driver: bridge
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:80"
+    healthcheck:
+      # nginx:alpine 自带 busybox wget
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  # 数据库数据（自动前缀为 agentwriter_pgdata，与开发库卷 agentwriter-pgdata 相互独立）
+  pgdata:
+  # 后端运行时数据（生成图片等）
+  backend-data:

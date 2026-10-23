@@ -22,6 +22,9 @@ export interface Article {
   generationProgress?: string | null
   createdAt: string
   updatedAt: string
+  topicId?: number | null      // 引用的热点话题 ID
+  topicTitle?: string | null   // 话题标题
+  topicScore?: number | null   // 话题热度
 }
 
 /** 文章图片用途 */

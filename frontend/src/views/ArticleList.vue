@@ -158,12 +158,18 @@ onUnmounted(() => {
       <div v-if="filteredArticles.length" class="article-list-table-wrap">
         <n-table size="small" :single-line="false" class="article-list-table">
           <thead>
-            <tr><th>文章</th><th>状态与进度</th><th>来源</th><th>更新时间</th><th>操作</th></tr>
+            <tr>
+              <th>文章</th>
+              <th class="article-list-col-status">状态与进度</th>
+              <th>来源</th>
+              <th class="article-list-col-time">更新时间</th>
+              <th class="article-list-col-action">操作</th>
+            </tr>
           </thead>
           <tbody>
             <tr v-for="article in filteredArticles" :key="article.id">
               <td class="article-list-title-cell">
-                <strong>{{ article.title }}</strong>
+                <strong :title="article.title">{{ article.title }}</strong>
                 <span>#{{ article.id }} · 创建于 {{ formatDateTime(article.createdAt) }}</span>
               </td>
               <td class="article-list-status-cell">
@@ -173,9 +179,15 @@ onUnmounted(() => {
                   <span>{{ progressMap[article.id].currentStep }}</span>
                 </div>
               </td>
-              <td><span class="article-list-source">{{ sourceLabel(article.source) }}</span></td>
-              <td><span class="article-list-time">{{ formatDateTime(article.updatedAt) }}</span></td>
-              <td>
+              <td class="article-list-source-cell">
+                <div v-if="article.topicTitle" class="article-list-source-topic">
+                  <n-tag v-if="article.topicScore != null" size="tiny" type="warning">热度 {{ article.topicScore }}</n-tag>
+                  <span class="article-list-source">{{ article.topicTitle }}</span>
+                </div>
+                <span v-else class="article-list-source">{{ sourceLabel(article.source) }}</span>
+              </td>
+              <td class="article-list-time-cell"><span class="article-list-time">{{ formatDateTime(article.updatedAt) }}</span></td>
+              <td class="article-list-action-cell">
                 <div class="article-list-actions">
                   <n-button size="small" quaternary @click="router.push(`/articles/${article.id}/edit`)">
                     <template #icon><n-icon><CreateOutline /></n-icon></template>
@@ -268,14 +280,23 @@ onUnmounted(() => {
 
 .article-list-filter { width: 168px; }
 .article-list-table-wrap { overflow-x: auto; }
-.article-list-table { min-width: 780px; }
+/* table-layout: fixed 下列宽由表头 th 决定，窄列宽度统一加在 th 上 */
+.article-list-table { min-width: 980px; table-layout: fixed; width: 100%; }
+.article-list-col-status { width: 150px; }
+.article-list-col-time { width: 160px; }
+.article-list-col-action { width: 340px; }
 
-.article-list-title-cell { min-width: 240px; }
-.article-list-title-cell strong { display: block; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 文章/来源列完整换行显示，不再省略截断 */
+.article-list-title-cell { min-width: 240px; word-break: break-word; }
+.article-list-title-cell strong { display: block; white-space: normal; word-break: break-word; }
 .article-list-title-cell span { display: block; margin-top: 5px; }
-.article-list-status-cell { min-width: 152px; }
+.article-list-source-cell { word-break: break-word; }
+/* 行内流式布局：热度标签 + 标题同行，标题过长时在行内自然换行（flex 整项换行会把标题挤到第二行） */
+.article-list-source-topic { display: block; line-height: 1.7; }
+.article-list-source-topic :deep(.n-tag) { margin-right: 6px; vertical-align: middle; }
+.article-list-source-topic .article-list-source { white-space: normal; word-break: break-word; }
 .article-list-progress { display: grid; grid-template-columns: minmax(70px, 1fr) auto; align-items: center; gap: 7px; margin-top: 8px; }
-.article-list-actions { display: flex; gap: 4px; }
+.article-list-actions { display: flex; flex-wrap: wrap; gap: 4px; }
 
 @media (max-width: 900px) {
   .article-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

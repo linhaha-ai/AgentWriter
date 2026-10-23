@@ -218,7 +218,7 @@ export interface AdminStyleRequest {
   enabled?: boolean
 }
 
-/** 发布提交结果。提交成功不等于平台已最终发布。 */
+/** 发布提交结果。公众号场景为草稿保存成功，需在公众平台手动发布。 */
 export interface PublishResult {
   platform: string
   url: string | null

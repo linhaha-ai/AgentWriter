@@ -6,6 +6,8 @@ import com.agentwriter.exception.ArticleNotFoundException;
 import com.agentwriter.exception.ArticleTransitionConflictException;
 import com.agentwriter.exception.DuplicateArticleException;
 import com.agentwriter.repository.ArticleRepository;
+import com.agentwriter.repository.ExecutionLogRepository;
+import com.agentwriter.repository.TopicRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,11 +35,17 @@ class ArticleServiceTest {
     @Mock
     private ArticleRepository articleRepository;
 
+    @Mock
+    private ExecutionLogRepository executionLogRepository;
+
+    @Mock
+    private TopicRepository topicRepository;
+
     private ArticleService articleService;
 
     @BeforeEach
     void setUp() {
-        articleService = new ArticleService(articleRepository);
+        articleService = new ArticleService(articleRepository, executionLogRepository, topicRepository);
     }
 
     @Test

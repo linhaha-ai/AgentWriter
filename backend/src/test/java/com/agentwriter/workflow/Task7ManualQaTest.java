@@ -128,7 +128,7 @@ class Task7ManualQaTest {
         var prompts = mock(PromptService.class);
         when(prompts.loadPrompt(any())).thenReturn("deterministic-prompt");
 
-        var articleService = new ArticleService(articleRepository);
+        var articleService = new ArticleService(articleRepository, logRepository, topicRepository);
         var topicService = new TopicService(topicRepository, topicAgent, om);
         var research = new ResearchStep(new DefaultResearchAgent(llm, prompts));
         var outline = new OutlineStep(new DefaultOutlineAgent(llm, prompts));

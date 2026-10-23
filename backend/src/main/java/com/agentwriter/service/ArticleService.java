@@ -8,25 +8,34 @@ import com.agentwriter.dto.GenerationLogDetail;
 import com.agentwriter.dto.GenerationLogSummary;
 import com.agentwriter.entity.Article;
 import com.agentwriter.entity.ArticleStatus;
+import com.agentwriter.entity.Topic;
 import com.agentwriter.exception.ArticleNotFoundException;
 import com.agentwriter.exception.ArticleTransitionConflictException;
 import com.agentwriter.exception.DuplicateArticleException;
 import com.agentwriter.repository.ArticleRepository;
 import com.agentwriter.repository.ExecutionLogRepository;
+import com.agentwriter.repository.TopicRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
     private final ExecutionLogRepository executionLogRepository;
+    private final TopicRepository topicRepository;
 
-    public ArticleService(ArticleRepository articleRepository, ExecutionLogRepository executionLogRepository) {
+    public ArticleService(ArticleRepository articleRepository,
+                          ExecutionLogRepository executionLogRepository,
+                          TopicRepository topicRepository) {
         this.articleRepository = articleRepository;
         this.executionLogRepository = executionLogRepository;
+        this.topicRepository = topicRepository;
     }
 
     /**
@@ -79,20 +88,56 @@ public class ArticleService {
     public ArticleResponse findById(Long id) {
         var article = articleRepository.findById(id)
                 .orElseThrow(() -> new ArticleNotFoundException(id));
-        return ArticleResponse.from(article);
+        return enrichTopic(ArticleResponse.from(article));
     }
 
     public List<ArticleResponse> findAll() {
-        return articleRepository.findAllByOrderByCreatedAtDescIdDesc().stream()
+        return enrichTopics(articleRepository.findAllByOrderByCreatedAtDescIdDesc().stream()
                 .map(ArticleResponse::from)
-                .toList();
+                .toList());
     }
 
     public List<ArticleResponse> findByStatus(String status) {
         String databaseValue = ArticleStatus.parse(status).databaseValue();
-        return articleRepository.findByStatusOrderByCreatedAtDescIdDesc(databaseValue).stream()
+        return enrichTopics(articleRepository.findByStatusOrderByCreatedAtDescIdDesc(databaseValue).stream()
                 .map(ArticleResponse::from)
+                .toList());
+    }
+
+    /**
+     * 批量补齐话题引用信息：从 source 解析出的 topicId 批量查询话题标题与热度。
+     */
+    private List<ArticleResponse> enrichTopics(List<ArticleResponse> responses) {
+        var topicIds = responses.stream()
+                .map(ArticleResponse::topicId)
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
+        if (topicIds.isEmpty()) {
+            return responses;
+        }
+        Map<Long, Topic> topics = topicRepository.findAllById(topicIds).stream()
+                .collect(Collectors.toMap(Topic::getId, Function.identity()));
+        return responses.stream()
+                .map(response -> {
+                    var topic = response.topicId() != null ? topics.get(response.topicId()) : null;
+                    return topic != null
+                            ? response.withTopic(topic.getTitle(), topic.getScore())
+                            : response;
+                })
+                .toList();
+    }
+
+    /**
+     * 单条补齐话题引用信息：详情接口使用。
+     */
+    private ArticleResponse enrichTopic(ArticleResponse response) {
+        if (response.topicId() == null) {
+            return response;
+        }
+        return topicRepository.findById(response.topicId())
+                .map(topic -> response.withTopic(topic.getTitle(), topic.getScore()))
+                .orElse(response);
     }
 
     public ArticleResponse updateContent(Long id, String contentMd, String contentHtml) {

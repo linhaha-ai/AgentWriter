@@ -4,6 +4,8 @@ import com.agentwriter.agent.Publisher;
 import com.agentwriter.dto.PublishResult;
 import com.agentwriter.entity.Article;
 import com.agentwriter.entity.ExecutionLog;
+import com.agentwriter.repository.ExecutionLogRepository;
+import com.agentwriter.repository.TopicRepository;
 import com.agentwriter.service.ArticlePublicationService;
 import com.agentwriter.service.ArticleService;
 import com.agentwriter.exception.ArticleTransitionConflictException;
@@ -120,7 +122,7 @@ class ArticleRepositoryPostgresRaceTest {
 
         @Bean
         ArticleService articleService(ArticleRepository articleRepository) {
-            return new ArticleService(articleRepository);
+            return new ArticleService(articleRepository, mock(ExecutionLogRepository.class), mock(TopicRepository.class));
         }
     }
 }

@@ -49,13 +49,19 @@ public class ArticlePublicationService {
             throw exception;
         } catch (RuntimeException exception) {
             restoreAndLogFailure(articleId, exception);
-            throw new PublicationFailedException("文章发布失败", exception);
+            throw new PublicationFailedException("保存公众号草稿失败", exception);
+        }
+
+        try {
+            articleService.completePublishing(articleId);
+        } catch (RuntimeException exception) {
+            throw new PublicationFailedException("草稿已保存，但文章状态更新失败", exception);
         }
 
         try {
             saveSuccess(articleId, result);
         } catch (RuntimeException exception) {
-            throw new PublicationFailedException("文章已发布，但审计记录保存失败", exception);
+            throw new PublicationFailedException("草稿已保存，但审计记录保存失败", exception);
         }
         return result;
     }

@@ -87,7 +87,7 @@ class ArticleRepositoryPostgresRaceTest {
 
         assertThat(providerCalls).hasValue(1);
         assertThat(outcomes.stream().filter(ArticleTransitionConflictException.class::isInstance)).hasSize(1);
-        assertThat(articleRepository.findById(articleId).orElseThrow().getStatus()).isEqualTo("publishing");
+        assertThat(articleRepository.findById(articleId).orElseThrow().getStatus()).isEqualTo("generated");
     }
 
     @Configuration(proxyBeanMethods = false)

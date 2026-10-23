@@ -61,6 +61,7 @@ class ArticlePublicationServiceTest {
         assertThat(publicationService.publish(1L)).isSameAs(expected);
 
         verify(articleService).startPublishing(1L);
+        verify(articleService).completePublishing(1L);
         verify(publisher).publish(article);
         ArgumentCaptor<ExecutionLog> log = ArgumentCaptor.forClass(ExecutionLog.class);
         verify(executionLogRepository).save(log.capture());
@@ -157,7 +158,7 @@ class ArticlePublicationServiceTest {
 
         assertThatThrownBy(() -> publicationService.publish(1L))
                 .isInstanceOf(PublicationFailedException.class)
-                .hasMessage("文章已发布，但审计记录保存失败")
+                .hasMessage("草稿已保存，但审计记录保存失败")
                 .hasCause(auditFailure);
 
         verify(articleService, never()).restoreGeneratedAfterPublishFailure(1L);

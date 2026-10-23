@@ -63,12 +63,12 @@ class WeChatPublisherLoopbackTest {
     }
 
     @Test
-    void loopbackPublishesTokenDraftAndSubmitExactlyOnceWithoutFakeUrl() {
+    void loopbackPublishesTokenAndDraftWithoutFreepublishSubmitCall() {
         PublishResult result = publisher().publish(article());
 
         assertThat(tokenCalls).hasValue(1);
         assertThat(draftCalls).hasValue(1);
-        assertThat(submitCalls).hasValue(1);
+        assertThat(submitCalls).hasValue(0);
         assertThat(result.platform()).isEqualTo("wechat");
         assertThat(result.url()).isNull();
     }

@@ -19,10 +19,10 @@ import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 微信公众号发布器 - 将文章发布到微信公众号。
+ * 微信公众号发布器 - 将文章保存到微信公众号草稿箱。
  *
- * <p>实现流程: 获取 access_token → 创建草稿 → 提交发布。
- * 使用草稿箱/发布能力 API，支持草稿管理和自由发布。</p>
+ * <p>实现流程: 获取 access_token → 创建草稿。
+ * 公众号接口不支持一键发布，保存成功后需前往公众平台手动发布。</p>
  *
  * <p>启用方式: application.yml 中设置:</p>
  * <pre>
@@ -43,8 +43,6 @@ public class WeChatPublisher implements Publisher {
     private static final String TOKEN_PATH = "/cgi-bin/token";
 
     private static final String DRAFT_ADD_PATH = "/cgi-bin/draft/add";
-
-    private static final String FREE_PUBLISH_SUBMIT_PATH = "/cgi-bin/freepublish/submit";
 
     private final WebClient webClient;
 
@@ -102,7 +100,7 @@ public class WeChatPublisher implements Publisher {
     @Override
     public PublishResult publish(Article article) {
         ensureConfigured();
-        log.info("微信公众号发布开始: articleId={}, title={}", article.getId(), article.getTitle());
+        log.info("微信公众号存草稿开始: articleId={}, title={}", article.getId(), article.getTitle());
 
         try {
             // 1. 获取 access_token
@@ -116,13 +114,9 @@ public class WeChatPublisher implements Publisher {
             String mediaId = createDraft(accessToken, article, prepared.content(), prepared.thumbMediaId());
             log.info("草稿创建成功: articleId={}, mediaId={}", article.getId(), mediaId);
 
-            // 3. 提交发布
-            String publishId = submitPublish(accessToken, mediaId);
-            log.info("发布任务提交成功: articleId={}, mediaId={}, publishId={}",
-                    article.getId(), mediaId, publishId);
-
-            log.info("微信公众号发布任务已提交，请关注异步发布结果推送: articleId={}, publishId={}",
-                    article.getId(), publishId);
+            // 3. 公众号接口不支持一键发布，草稿保存成功即提交成功，需前往公众平台手动发布
+            log.info("公众号草稿已保存，请前往公众平台手动发布: articleId={}, mediaId={}",
+                    article.getId(), mediaId);
 
             return new PublishResult(
                     "wechat",
@@ -135,8 +129,8 @@ public class WeChatPublisher implements Publisher {
         } catch (PublisherUnavailableException exception) {
             throw exception;
         } catch (RuntimeException exception) {
-            log.warn("微信公众号发布失败: articleId={}, type={}", article.getId(), exception.getClass().getSimpleName());
-            throw new PublicationFailedException("微信公众号发布失败", exception);
+            log.warn("微信公众号草稿保存失败: articleId={}, type={}", article.getId(), exception.getClass().getSimpleName());
+            throw new PublicationFailedException("微信公众号草稿保存失败", exception);
         }
     }
 
@@ -250,41 +244,6 @@ public class WeChatPublisher implements Publisher {
         } catch (Exception e) {
             if (e instanceof RuntimeException) throw (RuntimeException) e;
             throw new RuntimeException("创建微信草稿失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 提交草稿发布。
-     *
-     * <p>WeChat API: POST /cgi-bin/freepublish/submit?access_token=ACCESS_TOKEN</p>
-     *
-     * @param accessToken 有效的 access_token
-     * @param mediaId     草稿的 media_id
-     * @return 发布任务的 publish_id
-     */
-    String submitPublish(String accessToken, String mediaId) {
-        ObjectNode body = objectMapper.createObjectNode();
-        body.put("media_id", mediaId);
-
-        log.debug("提交发布请求: mediaId={}", mediaId);
-
-        try {
-            String response = webClient.post()
-                    .uri(apiBaseUrl + FREE_PUBLISH_SUBMIT_PATH + "?access_token={token}", accessToken)
-                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-                    .bodyValue(writeJson(body))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block(Duration.ofSeconds(30));
-
-            JsonNode root = objectMapper.readTree(response);
-            checkError(root);
-
-            return requiredText(root, "publish_id");
-
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) throw (RuntimeException) e;
-            throw new RuntimeException("提交微信发布失败: " + e.getMessage(), e);
         }
     }
 

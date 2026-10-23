@@ -1,0 +1,24 @@
+# 后端镜像：多阶段构建（Maven 编译 → 精简 JRE 运行）
+# 构建上下文为仓库根目录：docker build -f docker/Dockerfile.backend .
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /build
+
+# 先复制 Maven 描述文件并预取依赖，利用分层缓存加速二次构建
+COPY pom.xml ./
+COPY backend/pom.xml backend/
+# 阿里云 Maven 镜像加速（国内网络下更稳定）
+COPY docker/maven-settings.xml /root/.m2/settings.xml
+RUN mvn -B -q -pl backend -am dependency:go-offline || true
+
+# 再复制源码并打包（跳过测试，测试在本地/CI 执行）
+COPY backend/src backend/src
+RUN mvn -B -pl backend -am -DskipTests package
+
+# 运行阶段：仅保留 JRE 与可执行 fat jar
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+# 复制 Spring Boot fat jar（*.jar.original 为打包前原始包，不会被该通配命中）
+COPY --from=build /build/backend/target/backend-*.jar app.jar
+EXPOSE 8080
+# compose 可通过 command 追加 --key=value 形式的 Spring 参数（如代理配置）
+ENTRYPOINT ["java", "-jar", "app.jar"]

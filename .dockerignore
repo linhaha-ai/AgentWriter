@@ -1,0 +1,36 @@
+# 根 .dockerignore：后端镜像构建上下文（仓库根）裁剪
+# 只保留构建所需：pom.xml、backend/、docker/（Dockerfile 与 Maven 设置）
+
+# 版本控制与 IDE
+.git
+.idea
+.vscode
+.codegraph
+.omo
+opencode
+
+# 前端与文档等与后端构建无关的目录
+frontend
+doc
+docs
+scripts
+README.md
+LICENSE
+
+# 构建产物与运行时数据
+**/target
+backend/data
+backend-run*.log*
+
+# 日志与临时文件
+logs
+tmp
+temp
+*.log
+*.log.gz
+
+# 依赖与环境敏感文件
+**/node_modules
+.env
+.env.*
+*.pem

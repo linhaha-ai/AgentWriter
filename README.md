@@ -224,6 +224,36 @@ agentwriter/
 
 ## 🚀 快速开始
 
+### 方式一：Docker 一键启动（推荐）
+
+前置：已安装 Docker（含 Compose 插件）。
+
+```bash
+# 仓库根目录执行：构建镜像并启动 PostgreSQL + 后端 + 前端
+docker compose -f docker/docker-compose.yml up -d --build
+```
+
+启动完成后访问：
+
+| 入口 | 地址 |
+|------|------|
+| 前端界面 | http://localhost:3000 |
+| 数据库直连（可选） | localhost:5432（agentwriter / agentwriter_secret） |
+
+- 首次启动自动完成镜像构建（Maven/npm 均走国内镜像加速）、数据库初始化与 Flyway 建表（V1~V9），全部服务健康检查通过后即可使用。
+- API 与图片资源由前端 Nginx 反向代理（`/api`、`/media`）到后端，SSE 事件流已按本文「实时文章创建」一节的要求关闭缓冲；后端端口不直接暴露宿主机。
+- 需要覆盖端口、数据库账号或外网代理时，复制 `docker/.env.example` 为 `docker/.env` 修改后重新 `up`，完整说明见 [docker/README.md](./docker/README.md)。
+- 与本地开发环境（`mvn spring-boot:run` + 开发库容器）完全隔离，互不影响。
+
+```bash
+# 停止（保留数据）
+docker compose -f docker/docker-compose.yml down
+# 停止并删除数据卷（清空 Docker 全栈的数据库与生成图片）
+docker compose -f docker/docker-compose.yml down -v
+```
+
+### 方式二：本地开发
+
 ```bash
 # 克隆项目
 git clone https://github.com/yourname/agentwriter.git

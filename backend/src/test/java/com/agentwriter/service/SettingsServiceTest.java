@@ -42,6 +42,7 @@ class SettingsServiceTest {
         service = new SettingsService(
                 repository, new ObjectMapper(),
                 true, "nvidia", "https://llm.example.test/v1", "synthetic-only", "test-model", 120,
+                false, "", "synthetic-only", "", "1024x1024",
                 true, "wx-app", "synthetic-only", "AgentWriter", "thumb-id",
                 true, "0 0 8 * * ?", eventPublisher
         );

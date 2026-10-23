@@ -40,6 +40,7 @@ class SettingsControllerTest {
         SettingsService service = new SettingsService(
                 repository, new ObjectMapper(),
                 true, "nvidia", "https://llm.example.test/v1", "synthetic-only", "model", 60,
+                false, "", "synthetic-only", "", "1024x1024",
                 false, "", "synthetic-only", "AgentWriter", "",
                 true, "0 0 8 * * ?", eventPublisher
         );

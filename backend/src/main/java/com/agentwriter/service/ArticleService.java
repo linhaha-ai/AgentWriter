@@ -5,6 +5,7 @@ import com.agentwriter.common.MarkdownHeadingNumberer;
 import com.agentwriter.dto.ArticleCreateRequest;
 import com.agentwriter.dto.ArticleResponse;
 import com.agentwriter.dto.GenerationLogDetail;
+import com.agentwriter.dto.GenerationLogSummary;
 import com.agentwriter.entity.Article;
 import com.agentwriter.entity.ArticleStatus;
 import com.agentwriter.exception.ArticleNotFoundException;
@@ -36,6 +37,15 @@ public class ArticleService {
         findById(id);
         return executionLogRepository.findByArticleIdOrderByCreatedAtAsc(id).stream()
                 .map(GenerationLogDetail::from)
+                .toList();
+    }
+
+    /**
+     * 查询全部文章的生成日志概览（按最近执行时间倒序）。
+     */
+    public List<GenerationLogSummary> findGenerationLogSummaries() {
+        return executionLogRepository.findArticleLogSummaries().stream()
+                .map(GenerationLogSummary::from)
                 .toList();
     }
 

@@ -83,7 +83,7 @@ class ArticleImageControllerContractTest {
     void insertsReadyInlineImage() throws Exception {
         when(articleImageService.insert(1L, 2L)).thenReturn(new ArticleResponse(
                 1L, "标题", "## 架构\n\n![图](/api/article-images/2/content)", null,
-                "generated", "manual", null, null, null, null, null, null
+                "generated", "manual", null, null, null, null, null, null, null, null, null
         ));
 
         mockMvc.perform(post("/api/articles/1/images/2/insert"))

@@ -232,6 +232,6 @@ class WeChatPublisherLoopbackTest {
     }
 
     private static ArticleResponse response() {
-        return new ArticleResponse(1L, "Loopback", null, null, "publishing", "manual", null, null, null, null, null, null);
+        return new ArticleResponse(1L, "Loopback", null, null, "publishing", "manual", null, null, null, null, null, null, null, null, null);
     }
 }

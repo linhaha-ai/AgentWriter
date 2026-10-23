@@ -212,6 +212,6 @@ class ArticlePublicationServiceTest {
     }
 
     private static ArticleResponse response(String status) {
-        return new ArticleResponse(1L, "Test", null, null, status, "manual", null, null, null, null, null, null);
+        return new ArticleResponse(1L, "Test", null, null, status, "manual", null, null, null, null, null, null, null, null, null);
     }
 }

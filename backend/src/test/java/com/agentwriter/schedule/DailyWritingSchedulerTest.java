@@ -246,7 +246,7 @@ class DailyWritingSchedulerTest {
         savedArticle.setTitle("Near future");
         savedArticle.setStatus("draft");
         ArticleResponse generatedArticle = new ArticleResponse(9L, "Near future", null, null,
-                "generated", "topic:9", null, null, null, null, null, null);
+                "generated", "topic:9", null, null, null, null, null, null, null, null, null);
         ArticleService articleService = mock(ArticleService.class);
         ExecutionLogRepository executionLogs = mock(ExecutionLogRepository.class);
         RAGService ragService = mock(RAGService.class);

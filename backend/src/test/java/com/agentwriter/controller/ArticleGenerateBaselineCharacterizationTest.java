@@ -40,6 +40,6 @@ class ArticleGenerateBaselineCharacterizationTest {
     }
 
     private static ArticleResponse response(Long id, String title, String status, String content) {
-        return new ArticleResponse(id, title, content, null, status, "manual", null, null, null, null, null, null);
+        return new ArticleResponse(id, title, content, null, status, "manual", null, null, null, null, null, null, null, null, null);
     }
 }

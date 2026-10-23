@@ -101,6 +101,6 @@ class ArticleControllerTest {
 
     private static ArticleResponse response(Long id, String status) {
         return new ArticleResponse(
-                id, "Test", null, null, status, "manual", null, null, null, null, null, null);
+                id, "Test", null, null, status, "manual", null, null, null, null, null, null, null, null, null);
     }
 }

@@ -121,6 +121,6 @@ class ArticleGenerationContractAcceptanceTest {
     }
 
     private static ArticleResponse response(Long id, String title, String status, String content) {
-        return new ArticleResponse(id, title, content, null, status, "topic:42", null, null, null, null, null, null);
+        return new ArticleResponse(id, title, content, null, status, "topic:42", null, null, null, null, null, null, null, null, null);
     }
 }

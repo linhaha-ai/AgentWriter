@@ -62,6 +62,12 @@ const router = createRouter({
       meta: { title: '热点话题', icon: 'trending' },
     },
     {
+      path: '/logs',
+      name: 'GenerationLogs',
+      component: () => import('../views/GenerationLogs.vue'),
+      meta: { title: '生成日志', icon: 'clipboard' },
+    },
+    {
       path: '/gallery',
       name: 'Gallery',
       component: () => import('../views/Gallery.vue'),

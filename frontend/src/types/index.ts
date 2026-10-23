@@ -185,6 +185,17 @@ export interface GenerationLogDetail {
   createdAt: string | null
 }
 
+/** 文章生成日志概览（"生成日志"总览页列表项）。 */
+export interface GenerationLogSummary {
+  articleId: number
+  title: string
+  articleStatus: string
+  stepCount: number
+  failedCount: number
+  totalElapsedMs: number | null
+  lastRunAt: string | null
+}
+
 /** 后台模板创建/更新请求 */
 export interface AdminTemplateRequest {
   name: string

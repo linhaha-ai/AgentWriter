@@ -549,7 +549,7 @@ function outputCardClass(step: string): string {
               <pre v-if="step.key === 'research'" class="output-card__text">{{ outputOf(step.key) }}</pre>
               <MdPreview
                 v-else
-                :modelValue="outputOf(step.key)"
+                :modelValue="outputOf(step.key) ?? undefined"
                 :theme="previewTheme"
                 language="zh-CN"
                 class="output-card__md"

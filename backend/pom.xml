@@ -106,6 +106,14 @@
                         </exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <!-- 绑定 repackage 目标：package 阶段将瘦 jar 重打包为可直接 java -jar 运行的可执行 jar -->
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

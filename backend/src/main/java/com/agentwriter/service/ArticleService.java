@@ -204,6 +204,13 @@ public class ArticleService {
         return transition(id, ArticleStatus.GENERATED, ArticleStatus.PUBLISHING);
     }
 
+    /**
+     * 草稿保存成功后回到已生成状态（公众号不支持接口一键发布，成功语义为已存草稿箱）。
+     */
+    public ArticleResponse completePublishing(Long id) {
+        return transition(id, ArticleStatus.PUBLISHING, ArticleStatus.GENERATED);
+    }
+
     public ArticleResponse restoreGeneratedAfterPublishFailure(Long id) {
         return transition(id, ArticleStatus.PUBLISHING, ArticleStatus.GENERATED);
     }

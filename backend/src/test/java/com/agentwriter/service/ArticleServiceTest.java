@@ -59,6 +59,8 @@ class ArticleServiceTest {
         assertAllowed(ArticleStatus.GENERATED, ArticleStatus.PUBLISHING,
                 () -> articleService.startPublishing(4L));
         assertAllowed(ArticleStatus.PUBLISHING, ArticleStatus.GENERATED,
+                () -> articleService.completePublishing(5L));
+        assertAllowed(ArticleStatus.PUBLISHING, ArticleStatus.GENERATED,
                 () -> articleService.restoreGeneratedAfterPublishFailure(5L));
     }
 

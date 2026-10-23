@@ -108,9 +108,9 @@ function goBack() {
     <NAlert v-if="loadError" type="error" :show-icon="true" class="article-logs__alert">
       <template #header>加载失败</template>
       {{ loadError }}
-      <template #action>
+      <div class="article-logs__alert-actions">
         <NButton size="small" @click="load">重新加载</NButton>
-      </template>
+      </div>
     </NAlert>
 
     <NSpin :show="loading">
@@ -242,6 +242,10 @@ function goBack() {
 
 .article-logs__alert {
   margin-bottom: 16px;
+}
+
+.article-logs__alert-actions {
+  margin-top: 8px;
 }
 
 .article-logs__summary {

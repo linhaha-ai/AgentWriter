@@ -10,6 +10,17 @@
   box-shadow: var(--aw-shadow);
 }
 
+/* 可点击统计卡片：整卡可点，hover 高亮提示可跳转 */
+.dashboard-card--link {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dashboard-card--link:hover {
+  border-color: var(--aw-accent);
+  box-shadow: var(--aw-shadow-hover, var(--aw-shadow));
+}
+
 .dashboard-pipeline {
   display: flex;
   align-items: center;
@@ -129,6 +140,24 @@
 .dashboard-article-time {
   color: var(--aw-text-secondary);
   font-size: 12px;
+}
+
+/* 待处理文章行：整行可点击，hover 时高亮并提示标题可跳转 */
+.dashboard-article-row {
+  cursor: pointer;
+}
+
+.dashboard-article-row:hover {
+  background-color: var(--aw-bg-elevated);
+}
+
+.dashboard-article-title {
+  color: var(--aw-text-primary);
+  transition: color 0.15s ease;
+}
+
+.dashboard-article-row:hover .dashboard-article-title {
+  color: var(--aw-accent);
 }
 
 .dashboard-table-scroll {

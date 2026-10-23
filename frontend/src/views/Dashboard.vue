@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import type { Component } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   AlertCircleOutline,
   CheckmarkCircleOutline,
@@ -13,7 +14,23 @@ import type { Activity, AgentStatus, ArticleStatus } from '../types'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import { formatDateTime } from '../utils/date'
 
+const router = useRouter()
 const store = useDashboardStore()
+
+/** 点击「今日文章」卡片进入文章管理页 */
+function gotoArticles() {
+  router.push('/articles')
+}
+
+/** 点击「热点话题」卡片进入热点话题页 */
+function gotoTopics() {
+  router.push('/topics')
+}
+
+/** 点击待处理文章行/标题进入文章预览页 */
+function openArticlePreview(id: number) {
+  router.push(`/articles/${id}/preview`)
+}
 
 onMounted(() => {
   store.loadAll()
@@ -93,7 +110,8 @@ function agentStatusLabel(agent: AgentStatus): string {
     <!-- 统计卡片 -->
     <n-grid cols="2 m:4" responsive="screen" :x-gap="16" :y-gap="16">
       <n-grid-item>
-        <n-card size="small" class="dashboard-card">
+        <!-- 今日文章卡片：点击进入文章管理页 -->
+        <n-card size="small" class="dashboard-card dashboard-card--link" @click="gotoArticles">
           <n-statistic label="今日文章" :value="store.stats?.todayArticles ?? '-'">
             <template #prefix>
               <n-icon><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 3h18v2H3V3m0 4h18v2H3V7m0 4h18v2H3v-2m0 4h18v2H3v-2m0 4h10v2H3v-2z"/></svg></n-icon>
@@ -120,7 +138,8 @@ function agentStatusLabel(agent: AgentStatus): string {
         </n-card>
       </n-grid-item>
       <n-grid-item>
-        <n-card size="small" class="dashboard-card">
+        <!-- 热点话题卡片：点击进入热点话题页 -->
+        <n-card size="small" class="dashboard-card dashboard-card--link" @click="gotoTopics">
           <n-statistic label="热点话题" :value="store.stats?.topicCount ?? '-'">
             <template #prefix>
               <n-icon><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></n-icon>
@@ -214,8 +233,14 @@ function agentStatusLabel(agent: AgentStatus): string {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="article in store.articles.slice(0, 5)" :key="article.id">
-              <td>{{ article.title }}</td>
+            <!-- 待处理文章行：点击跳转到文章预览页 -->
+            <tr
+              v-for="article in store.articles.slice(0, 5)"
+              :key="article.id"
+              class="dashboard-article-row"
+              @click="openArticlePreview(article.id)"
+            >
+              <td class="dashboard-article-title">{{ article.title }}</td>
               <td>
                 <n-tag size="tiny" :type="article.status === 'failed' ? 'error' : article.status === 'publishing' || article.status === 'writing' || article.status === 'generating' ? 'info' : 'warning'">
                   {{ articleStatusLabel[article.status] }}
@@ -228,7 +253,8 @@ function agentStatusLabel(agent: AgentStatus): string {
               </td>
               <td class="dashboard-article-time">{{ formatDateTime(article.updatedAt) }}</td>
               <td>
-                <n-button size="tiny" quaternary disabled title="详情页尚未开放">查看</n-button>
+                <!-- 查看按钮：进入文章预览页；阻止冒泡避免与整行点击重复触发 -->
+                <n-button size="tiny" quaternary @click.stop="openArticlePreview(article.id)">查看</n-button>
               </td>
             </tr>
           </tbody>

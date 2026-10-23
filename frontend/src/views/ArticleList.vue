@@ -35,7 +35,7 @@ const statusOptions = [
   { label: '撰写中', value: 'writing' },
   { label: '审核中', value: 'reviewing' },
   { label: '已生成', value: 'generated' },
-  { label: '发布中', value: 'publishing' },
+  { label: '存草稿中', value: 'publishing' },
   { label: '失败', value: 'failed' },
 ]
 
@@ -45,7 +45,7 @@ const statusMap: Partial<Record<ArticleStatus, { label: string; type: TagType }>
   writing: { label: '撰写中', type: 'info' },
   reviewing: { label: '审核中', type: 'info' },
   generated: { label: '已生成', type: 'success' },
-  publishing: { label: '发布中', type: 'info' },
+  publishing: { label: '存草稿中', type: 'info' },
   failed: { label: '失败', type: 'error' },
 }
 
@@ -102,7 +102,7 @@ async function handlePublish(articleId: number) {
   lastSuccess.value = ''
   try {
     await publishArticle(articleId)
-    lastSuccess.value = '已提交公众号发布'
+    lastSuccess.value = '已保存到公众号草稿箱，请前往公众平台手动发布'
     await store.loadArticles()
   } catch (error) {
     lastError.value = errorMessage(error)
@@ -123,7 +123,7 @@ onUnmounted(() => {
 
 <template>
   <section class="aw-page article-list-page">
-    <AppPageHeader title="文章管理" description="查看生成进度、维护文章内容并提交公众号发布。" eyebrow="内容资产">
+    <AppPageHeader title="文章管理" description="查看生成进度、维护文章内容并保存公众号草稿。" eyebrow="内容资产">
       <template #actions>
         <n-button secondary :loading="refreshing" @click="loadArticles(true)">
           <template #icon><n-icon><RefreshOutline /></n-icon></template>
@@ -211,7 +211,7 @@ onUnmounted(() => {
                     @click="handlePublish(article.id)"
                   >
                     <template #icon><n-icon><SendOutline /></n-icon></template>
-                    发布
+                    存草稿
                   </n-button>
                 </div>
               </td>

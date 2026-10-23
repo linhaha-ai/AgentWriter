@@ -95,7 +95,7 @@ const statusOptions = [
   { label: '撰写中', value: 'writing' },
   { label: '审核中', value: 'reviewing' },
   { label: '已生成', value: 'generated' },
-  { label: '发布中', value: 'publishing' },
+  { label: '存草稿中', value: 'publishing' },
   { label: '失败', value: 'failed' },
 ]
 
@@ -105,7 +105,7 @@ const statusMap: Record<ArticleStatus, { label: string; type: TagType }> = {
   writing: { label: '撰写中', type: 'info' },
   reviewing: { label: '审核中', type: 'info' },
   generated: { label: '已生成', type: 'success' },
-  publishing: { label: '发布中', type: 'info' },
+  publishing: { label: '存草稿中', type: 'info' },
   failed: { label: '失败', type: 'error' },
 }
 
@@ -151,7 +151,7 @@ async function handlePublishArticle(id: number) {
   lastSuccess.value = ''
   try {
     await publishArticle(id)
-    lastSuccess.value = '已提交发布'
+    lastSuccess.value = '已保存到公众号草稿箱，请前往公众平台手动发布'
     await store.loadArticles()
   } catch (error: unknown) {
     lastError.value = errorMessage(error)
@@ -266,8 +266,8 @@ async function handleSaveEdit() {
     <n-alert v-if="lastSuccess" title="操作完成" type="success" :show-icon="true">
       {{ lastSuccess }}
     </n-alert>
-    <n-alert v-if="publishingId !== null" title="正在提交发布" type="info" :show-icon="true">
-      正在提交发布，请勿重复提交。
+    <n-alert v-if="publishingId !== null" title="正在保存草稿" type="info" :show-icon="true">
+      正在保存到公众号草稿箱，请勿重复提交。
     </n-alert>
     <!-- 页面标题与操作区 -->
     <div class="articles-page-header">
@@ -352,9 +352,9 @@ async function handleSaveEdit() {
                 secondary
                 :loading="publishingId === article.id"
                 :disabled="publishingId !== null"
-                :title="publishingId === article.id ? '正在提交发布' : '提交发布'"
+                :title="publishingId === article.id ? '正在保存草稿' : '保存草稿'"
                 @click="handlePublishArticle(article.id)"
-              >提交发布</n-button>
+              >保存草稿</n-button>
             </td>
           </tr>
         </tbody>

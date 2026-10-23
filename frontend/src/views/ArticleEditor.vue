@@ -163,8 +163,7 @@ async function publish() {
   lastError.value = ''
   try {
     await publishArticle(article.value.id)
-    article.value = { ...article.value, status: 'publishing' }
-    lastSuccess.value = '已提交公众号发布'
+    lastSuccess.value = '已保存到公众号草稿箱，请前往公众平台手动发布'
   } catch (error) {
     lastError.value = errorMessage(error)
   } finally {
@@ -186,7 +185,7 @@ onUnmounted(() => {
 
 <template>
   <section class="aw-page article-editor-page">
-    <AppPageHeader :title="title || '编辑文章'" description="编辑 Markdown、组织图片素材，并在确认后提交公众号发布。" eyebrow="内容工作区">
+    <AppPageHeader :title="title || '编辑文章'" description="编辑 Markdown、组织图片素材，并保存到公众号草稿箱。" eyebrow="内容工作区">
       <template #actions>
         <n-button secondary @click="router.push('/articles')">
           <template #icon><n-icon><ArrowBackOutline /></n-icon></template>
@@ -234,14 +233,14 @@ onUnmounted(() => {
 
         <aside class="article-editor-aside">
           <n-card class="article-side-card" :bordered="false">
-            <div class="article-side-card__title"><n-icon><ImageOutline /></n-icon><strong>封面与发布</strong></div>
+            <div class="article-side-card__title"><n-icon><ImageOutline /></n-icon><strong>封面与草稿</strong></div>
             <n-input v-model:value="coverImage" size="small" placeholder="封面图片 URL" />
             <img v-if="coverImage" class="article-cover-preview" :src="coverImage" alt="文章封面预览">
             <div class="article-side-card__meta"><span>当前状态</span><strong>{{ article.status }}</strong></div>
             <n-button block secondary :disabled="!contentMd" @click="previewOpen = true">查看公众号预览</n-button>
             <n-button block type="success" :loading="publishing" :disabled="!canPublish || publishing" @click="publish">
               <template #icon><n-icon><SendOutline /></n-icon></template>
-              {{ canPublish ? '提交公众号发布' : '生成完成后可发布' }}
+              {{ canPublish ? '保存到公众号草稿箱' : '生成完成后可存草稿' }}
             </n-button>
           </n-card>
 

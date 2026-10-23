@@ -59,7 +59,7 @@ const articleStatusLabel: Record<ArticleStatus, string> = {
   writing: '撰写中',
   reviewing: '审核中',
   generated: '已生成',
-  publishing: '发布中',
+  publishing: '存草稿中',
   failed: '失败',
 }
 

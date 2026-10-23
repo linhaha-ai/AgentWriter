@@ -1,0 +1,9 @@
+# 前端镜像构建上下文裁剪
+node_modules
+dist
+dist-ssr
+*.local
+*.log
+README.md
+.vscode
+.idea
